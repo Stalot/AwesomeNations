@@ -5,7 +5,7 @@ AwesomeNations is a simple python web scraping library for NationStates. Useful 
 
 # How to play!
 
-Getting nation census:
+Getting nation census (0-88):
 ``` python
 from awesomeNations import AwesomeNations as awn
 
@@ -14,7 +14,7 @@ print(data)
 ```
 
 Returns:
-`{'defense_forces': '7,425.68', 'average_income_of_rich': '79,619'}`
+`{'testlandia': {'defense_forces': '7,425.68', 'average_income_of_rich': '79,619'}}`
 
 Changing the "raw" argument (True by default):
 ``` python
@@ -25,4 +25,4 @@ print(data)
 ```
 
 Returns:
-`{'defense_forces': 7425.68, 'average_income_of_rich': 79619}`
+`{'testlandia': {'defense_forces': 7425.68, 'average_income_of_rich': 79619}}`
