@@ -4,8 +4,7 @@ class InvalidQuery(Exception):
         self.message = message
         super().__init__(f'{self.message}')
 
-class NationException(Exception):
+class NationNotFound(Exception):
     def __init__(self, nation_name) -> None:
-        message = f'Error while searching for this nation, maybe, the nation "{nation_name}" does not exist anymore or never existed.'
-        self.message = message
+        self.message = f'Error while searching for this nation, maybe, the nation "{nation_name}" does not exist anymore or never existed.'
         super().__init__(f'{self.message}')

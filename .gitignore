@@ -1,0 +1,5 @@
+__pycache__/
+awesomeNations.egg-info/
+build/
+dist/
+virtual_enviroment/

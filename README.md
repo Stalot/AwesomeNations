@@ -13,16 +13,14 @@ data = awn.get_census('testlandia', [46, 74])
 print(data)
 ```
 
-Returns:
+Must return something like:
 `{'testlandia': {'defense_forces': '7,425.68', 'average_income_of_rich': '79,619'}}`
 
 Changing the "raw" argument (True by default):
 ``` python
-from awesomeNations import AwesomeNations as awn
-
 data = awn.get_census('testlandia', [46, 74], raw=False)
 print(data)
 ```
 
-Returns:
+Must return something like:
 `{'testlandia': {'defense_forces': 7425.68, 'average_income_of_rich': 79619}}`
