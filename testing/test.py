@@ -2,5 +2,7 @@ from awesomeNations import AwesomeNations as awn
 
 if __name__ == '__main__':
     print('TESTING\n')
-    data = awn.get_overview('fullworthia')
-    print(data['short_name'])
+    mynation = awn.Nation('orlys')
+    data = mynation.get_census([46])
+    census = data['defense_forces']
+    print(f'{census['title']}\n{census['raw_value']}')
