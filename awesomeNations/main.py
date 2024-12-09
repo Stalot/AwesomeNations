@@ -14,21 +14,21 @@ class AwesomeNations:
             return exist
         
         def get_overview(self) -> dict:
-            nation_name = self.nation
             """
             Gets an overview of the requested nation.
             """
+            nation_name = self.nation
             overview = NationObject.overview(nation_name)
             return overview
 
         def get_census(self, censusid: list = [0]) -> dict:
-            nation_name = self.nation
             """
             Gets one or more census [0-88] of the requested nation, examples:
             - [0]: Civil rights
             - [46]: Defense Forces
             - [0, 4, 46, 34] ...
             """
+            nation_name = self.nation
             census = NationObject.census(nation_name, censusid)
             return census
     

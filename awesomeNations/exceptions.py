@@ -1,7 +1,6 @@
-class InvalidQuery(Exception):
-    def __init__(self, query, invalid_value) -> None:
-        message=f'Invalid value in query: {query}. {type(invalid_value)} {invalid_value}.'
-        self.message = message
+class InvalidCensus(Exception):
+    def __init__(self, censusid) -> None:
+        self.message = f'Census id ({censusid}) is invalid.'
         super().__init__(f'{self.message}')
 
 class NationNotFound(Exception):

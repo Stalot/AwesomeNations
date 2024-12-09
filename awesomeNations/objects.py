@@ -1,4 +1,4 @@
-from awesomeNations.exceptions import NationNotFound, InvalidQuery
+from awesomeNations.exceptions import NationNotFound, InvalidCensus
 from bs4 import BeautifulSoup as bs
 from icecream import ic
 from datetime import datetime
@@ -8,15 +8,19 @@ headers = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)
 
 today = datetime.today()
 date = today.strftime('%H:%M:%S')
-ic.configureOutput(prefix=f'{date} --> ', includeContext=True)
+ic.configureOutput(prefix=f'{date} --> ')
 
-class methods:
-    def format(text: str) -> str:
-        formatted_text = text.casefold().replace(' ', '_')
-        return formatted_text
+base_urls: dict = {
+    'nation_page': 'https://www.nationstates.net/nation={name}',
+    'census_page': 'https://www.nationstates.net/nation={name}/detail=trend/censusid={id}'
+}
+
+def format(text: str) -> str:
+    formatted_text = text.casefold().replace(' ', '_')
+    return formatted_text
 
 def nationBubbles(top, bottom) -> dict:
-        bubble_keys = [methods.format(title.get_text()) for title in top]
+        bubble_keys = [format(title.get_text()) for title in top]
         bubble_values = [key.get_text() for key in bottom]
         bubbles = {}
 
@@ -48,13 +52,25 @@ def summaryBox(box) -> dict:
 def census_urls(nation_name: str, ids: list) -> list:
     urls = []
     for id in ids:
-        current_url = f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}'
+        if not type(id).is_integer(id) or id > 88:
+            raise InvalidCensus(id)
+        current_url = base_urls['census_page'].format(name = nation_name, id = id)
         urls.append(current_url)
     return urls
 
+def nation_exists(nation_name: str) -> bool:
+    html = requests.get(base_urls['nation_page'].format(name = nation_name), headers=headers)
+    soup = bs(html.text, 'html.parser')
+    error_p = soup.find('p', class_="error")
+
+    if error_p:
+        return False
+    else:
+        return True
+
 class NationObject:
     def exists(nation_name: str) -> bool:
-        html = requests.get(f'https://www.nationstates.net/nation={nation_name}', headers=headers)
+        html = requests.get(base_urls['nation_page'].format(name = nation_name), headers=headers)
         soup = bs(html.text, 'html.parser')
         error_p = soup.find('p', class_="error")
 
@@ -64,9 +80,11 @@ class NationObject:
             return True
 
     def overview(nation_name: str) -> dict:
-        formatted_name = methods.format(nation_name)
+        if not nation_exists(nation_name):
+            raise NationNotFound(nation_name)
 
-        html = requests.get(f'https://www.nationstates.net/nation={formatted_name}', headers=headers)
+        formatted_name = format(nation_name)
+        html = requests.get(base_urls['nation_page'].format(name = formatted_name), headers=headers)
         soup = bs(html.text, 'lxml')
 
         flag_source = soup.find('div', class_='newflagbox').find('img').extract()
@@ -105,7 +123,10 @@ class NationObject:
         return overview
 
     def census(nation_name: str, censusid: list) -> dict:
-        formatted_name = methods.format(nation_name)
+        if not nation_exists(nation_name):
+            raise NationNotFound(nation_name)
+
+        formatted_name = format(nation_name)
         urls = census_urls(formatted_name, censusid)
 
         census = {}
@@ -125,7 +146,7 @@ class NationObject:
             if formatted_value.is_integer():
                 formatted_value = int(formatted_value)
 
-            census[methods.format(title)] = {
+            census[format(title)] = {
                 'title': title,
                 'raw_value': raw_value,
                 'value': formatted_value,
