@@ -14,8 +14,9 @@ setup(
     description='A simple python web scraping library for NationStates',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='LyTech',
+    author='Orly Neto',
     author_email='orly2carvalhoneto@gmail.com',
-    keywords='NationStates',
+    license='MIT License',
+    keywords=['NationStates', 'Scrapper', 'Web Scrapper'],
     packages=find_packages(),
-    install_requires=['beautifulsoup4==4.12.3', 'requests==2.32.3'])
+    install_requires=['beautifulsoup4==4.12.3', 'requests==2.32.3', 'selenium==4.27.1', 'webdriver-manager==4.0.2'])

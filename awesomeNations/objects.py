@@ -1,24 +1,22 @@
-from awesomeNations.exceptions import NationNotFound, InvalidCensus
+from awesomeNations.exceptions import NationNotFound, CensusNotFound, RequestError, RegionNotFound
+from awesomeNations.configuration import DEFAULT_HEADERS, DEFAULT_PARSER
 from bs4 import BeautifulSoup as bs
-from icecream import ic
-from datetime import datetime
+from awesomeNations.seleniumScrapper import get_dynamic_source
 import requests
 
-headers = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'}
+def request(parser: str = DEFAULT_PARSER, url: str = 'https://www.nationstates.net/'):
+        html = requests.get(url, headers=DEFAULT_HEADERS)
+        if html.status_code != 200:
+                raise RequestError(html.status_code)
+        soup = bs(html.text, parser)
+        response = {'bs4_soup': soup}
+        return response
 
-today = datetime.today()
-date = today.strftime('%H:%M:%S')
-ic.configureOutput(prefix=f'{date} --> ')
-
-base_urls: dict = {
-    'nation_page': 'https://www.nationstates.net/nation={name}',
-    'census_page': 'https://www.nationstates.net/nation={name}/detail=trend/censusid={id}'
-}
-
-def format(text: str) -> str:
+def format_text(text: str) -> str:
     formatted_text = text.casefold().replace(' ', '_')
     return formatted_text
 
+# Nation actions:
 def nationBubbles(top, bottom) -> dict:
         bubble_keys = [format(title.get_text()) for title in top]
         bubble_values = [key.get_text() for key in bottom]
@@ -50,28 +48,32 @@ def summaryBox(box) -> dict:
     return values
 
 def census_urls(nation_name: str, ids: list) -> list:
-    urls = []
+    urls: list = []
     for id in ids:
         if not type(id).is_integer(id) or id > 88:
-            raise InvalidCensus(id)
-        current_url = base_urls['census_page'].format(name = nation_name, id = id)
+            raise CensusNotFound(id)
+        current_url: str = f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}'
         urls.append(current_url)
     return urls
 
-def nation_exists(nation_name: str) -> bool:
-    html = requests.get(base_urls['nation_page'].format(name = nation_name), headers=headers)
-    soup = bs(html.text, 'html.parser')
+def check_if_nation_exists(nation_name: str) -> None:
+    url: str = f'https://www.nationstates.net/nation={nation_name}'
+    response: dict = request(parser='html.parser', url=url)
+    soup: bs = response['bs4_soup']
     error_p = soup.find('p', class_="error")
 
     if error_p:
-        return False
-    else:
-        return True
+        raise NationNotFound(nation_name)
 
 class NationObject:
-    def exists(nation_name: str) -> bool:
-        html = requests.get(base_urls['nation_page'].format(name = nation_name), headers=headers)
-        soup = bs(html.text, 'html.parser')
+    def __init__(self, nation_name: str):
+        self.nation_name = nation_name
+
+    def exists(self) -> bool:
+        nation_name: str = self.nation_name
+        url: str = f'https://www.nationstates.net/nation={nation_name}'
+        response: dict = request(parser='html.parser', url=url)
+        soup: bs = response['bs4_soup']
         error_p = soup.find('p', class_="error")
 
         if error_p:
@@ -79,23 +81,25 @@ class NationObject:
         else:
             return True
 
-    def overview(nation_name: str) -> dict:
-        if not nation_exists(nation_name):
-            raise NationNotFound(nation_name)
+    def overview(self) -> dict:
+        nation_name: str = self.nation_name
+        formatted_name = format_text(nation_name)
+        check_if_nation_exists(formatted_name)
 
-        formatted_name = format(nation_name)
-        html = requests.get(base_urls['nation_page'].format(name = formatted_name), headers=headers)
-        soup = bs(html.text, 'lxml')
+        url: str = f'https://www.nationstates.net/nation={formatted_name}'
+        response: dict = request(parser='lxml', url=url)
+        soup: bs = response['bs4_soup']
 
         flag_source = soup.find('div', class_='newflagbox').find('img').extract()
-        if flag_source.has_attr('src'):
-            flag = f'www.nationstates.net{flag_source.attrs['src']}'
-        elif flag_source.has_attr('data-cfsrc'):
-            flag = f'www.nationstates.net{flag_source.attrs['data-cfsrc']}'
+        if flag_source:
+            if flag_source.has_attr('src'):
+                flag = f'www.nationstates.net{flag_source.attrs['src']}'
+            elif flag_source.has_attr('data-cfsrc'):
+                flag = f'www.nationstates.net{flag_source.attrs['data-cfsrc']}'
 
         short_name = soup.find('div', class_='newtitlename').get_text().replace('\n', '')
         long_name = f'{soup.find('div', class_='newtitlepretitle').get_text()} {short_name}'.replace('\n', '')
-        category = soup.find('div', class_='newtitlecategory').get_text()
+        wa_category = soup.find('div', class_='newtitlecategory').get_text()
         motto = soup.find('span', class_='slogan').get_text()
 
         bubble_top_line = soup.find_all('div', class_='newmainlinebubbletop')
@@ -112,28 +116,27 @@ class NationObject:
                     'flag': flag,
                     'short_name': short_name,
                     'long_name': long_name,
-                    'category': category,
+                    'wa_category': wa_category,
                     'motto': motto,
                     'bubbles': bubbles,
                     'description': description,
                     'box': box
                     }
 
-        ic(overview)
         return overview
 
-    def census(nation_name: str, censusid: list) -> dict:
-        if not nation_exists(nation_name):
-            raise NationNotFound(nation_name)
+    def census(self, censusid: list) -> dict:
+        nation_name: str = self.nation_name
+        formatted_name = format_text(nation_name)
+        check_if_nation_exists(formatted_name)
 
-        formatted_name = format(nation_name)
         urls = census_urls(formatted_name, censusid)
 
         census = {}
 
         for url in urls:
-            html = requests.get(url, headers=headers)
-            soup = bs(html.text, 'html.parser')
+            response: dict = request(parser='html.parser', url=url)
+            soup: bs = response['bs4_soup']
 
             title = soup.find('h2').get_text()
             raw_value = soup.find('div', class_='censusscoreboxtop').get_text().replace(' ', '')
@@ -153,5 +156,168 @@ class NationObject:
                 'bubbles': bubbles
                 }
 
-        ic(census)
         return census
+
+# Region actions:
+def check_if_region_exists(region_name: str) -> None:
+    url: str = f'https://www.nationstates.net/region={region_name}'
+    response: dict = request(parser='html.parser', url=url)
+    soup: bs = response['bs4_soup']
+    error_p = soup.find('p', class_="error")
+
+    if error_p:
+        raise RegionNotFound(region_name)
+
+def embassy(divindents: bs, formatted_name: str) -> dict:
+    embassy_section = divindents[3].find('table', class_='shiny wide embassies mcollapse')
+    embassies_dict: dict = {formatted_name: {'total': 0, 'embassies': 'No regional embassies.'}}
+    if embassy_section:
+        embassy_names: list = [name.get_text() for name in embassy_section.find_all('td', class_='bigleft')]
+        embassy_formatted_names: list = []
+        for name in embassy_names:
+            new_name: str = ' '
+            split: list = name.split(' ')
+            split.pop(0)
+            new_name = new_name.join(split)
+            embassy_formatted_names.append(new_name)
+            
+        embassy_durations = [duration.get_text() for duration in embassy_section.find_all('td', class_='')]
+
+        embassies = []
+
+        for i in range(len(embassy_names)):
+            embassies.append({'region': embassy_formatted_names[i], 'duration': embassy_durations[i]})
+
+        embassies_dict = {formatted_name: {'total': len(embassies), 'embassies': embassies}}
+    return embassies_dict
+
+class RegionObject:
+    def __init__(self, region_name: str):
+        self.region_name = region_name
+    
+    def exists(self) -> bool:
+        region_name: str = self.region_name
+        url: str = f'https://www.nationstates.net/region={region_name}'
+        response: dict = request(parser='lxml', url=url)
+        soup: bs = response['bs4_soup']
+        error_p = soup.find('p', class_="error")
+
+        if error_p:
+            return False
+        else:
+            return True
+
+    def overview(self):
+        region_name: str = self.region_name
+        formatted_name: str = format_text(region_name)
+        check_if_region_exists(formatted_name)
+
+        url: str = f'https://www.nationstates.net/region={formatted_name}'
+        response: dict = request(parser='lxml', url=url)
+        soup: bs = response['bs4_soup']
+
+        founder: str = 'None'
+        governor: str = 'None'
+        category: str = 'None'
+        wa_delegate: str = 'None'
+        last_wa_update: str = 'None'
+        region_flag: str = 'None'
+        region_banner: str = 'None'
+
+        region_cover = soup.find('div', class_='regioncover')
+
+        flag_cover = region_cover.find('img')
+        if flag_cover:
+            if flag_cover.has_attr('src'):
+                region_flag = f'https://www.nationstates.net{flag_cover.attrs['src']}'
+            elif flag_cover.has_attr('data-cfsrc'):
+                region_flag = f'https://www.nationstates.net{flag_cover.attrs['data-cfsrc']}'
+        banner_source = region_cover.attrs['style'].replace('background-image:url', '').replace('(', '').replace(')', '')
+        region_banner = f'https://www.nationstates.net{banner_source}'
+
+        region_content = soup.find('div', id='regioncontent')
+        paragraphs: list = region_content.find_all('p', limit=4)
+        for text in paragraphs:
+            content = text.get_text().strip()
+            if 'Feeder' in content or 'Sinker' in content or 'Frontier' in content:
+                category = content
+            if 'Last WA Update' in content:
+                last_wa_update = content
+            if 'Governor' in content:
+                governor = content
+            if 'WA Delegate' in content:
+                wa_delegate = content
+            if 'Founder' in content:
+                founder = content
+
+        overview = dict(category=category, governor=governor, wa_delegate=wa_delegate, last_wa_update=last_wa_update, founder=founder, region_flag=region_flag, region_banner=region_banner)
+        return overview
+
+    def ranks(self, censusid: int):
+        region_name: str = self.region_name
+        formatted_name: str = format_text(region_name)
+        check_if_region_exists(formatted_name)
+
+        url: str = f'https://www.nationstates.net/page=list_nations/censusid={censusid}/region={formatted_name}'
+        
+        response = request(parser='lxml', url=url)
+        soup: bs = response['bs4_soup']
+
+        region_rank: dict = {}
+
+        rank_table = soup.find('table', class_='shiny ranks nationranks mcollapse').find_all('tr')
+        rank_table.pop(0)
+
+        rank_elements = [td.find_all('td', limit=2) for td in rank_table]
+        rank_positions: list = []
+        rank_nations: list = []
+        for td in rank_elements:
+            position = td[0].get_text().replace('.', '')
+            nation = td[1].get_text()
+            rank_positions.append(position)
+            rank_nations.append(nation)
+        for i in range(len(rank_positions)):
+            region_rank.update({rank_positions[i]: rank_nations[i]})
+        
+        page = soup.find('div', id='regioncontent')
+        paragraphs = page.find_all('p', limit=2)
+
+        description: str = paragraphs[0].get_text()
+        region_world_rank: str = paragraphs[1].get_text()
+        world_census: dict = {'title': page.find('h3').get_text(),
+                              'description': description,
+                              'region_world_rank': region_world_rank,
+                              'rank': region_rank
+                              }
+
+    def activity(self, filter: str):
+        region_name: str = self.region_name
+        formatted_name: str = format_text(region_name)
+        check_if_region_exists(formatted_name)
+
+        url: str = f'https://www.nationstates.net/page=activity/view=region.{formatted_name}/filter={filter}'
+        source: str = get_dynamic_source(url, '//*[@id="reports"]/ul')
+
+        if source == None:
+            events = 'No results.'
+            ic(events)
+            return events
+        
+        soup: bs = bs(source, DEFAULT_PARSER)
+        reports = soup.find('div', class_='clickabletimes').find('ul')
+        events = [li.get_text() for li in reports.find_all('li')]
+        return events
+
+    def embassies(self) -> dict:
+        region_name: str = self.region_name
+        formatted_name: str = format_text(region_name)
+        check_if_region_exists(formatted_name)
+
+        url: str = f'https://www.nationstates.net/page=region_admin/region={formatted_name}'
+        source: str = get_dynamic_source(url, '//*[@id="regioncontent"]/div[4]/div/table/tbody/tr[2]')
+        soup: bs = bs(source, DEFAULT_PARSER)
+
+        divindents = soup.find_all('div', class_='divindent')
+
+        embassies: dict = embassy(divindents, formatted_name)
+        return embassies
