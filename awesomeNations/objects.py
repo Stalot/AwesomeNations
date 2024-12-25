@@ -1,4 +1,4 @@
-from awesomeNations.exceptions import NationNotFound, CensusNotFound, RequestError, RegionNotFound
+from awesomeNations.exceptions import NationNotFound, CensusNotFound, HTTPError, RegionNotFound
 from awesomeNations.configuration import DEFAULT_HEADERS, DEFAULT_PARSER
 from bs4 import BeautifulSoup as bs
 from awesomeNations.seleniumScrapper import get_dynamic_source
@@ -7,18 +7,18 @@ import requests
 def request(parser: str = DEFAULT_PARSER, url: str = 'https://www.nationstates.net/'):
         html = requests.get(url, headers=DEFAULT_HEADERS)
         if html.status_code != 200:
-                raise RequestError(html.status_code)
+                raise HTTPError(html.status_code)
         soup = bs(html.text, parser)
         response = {'bs4_soup': soup}
         return response
 
 def format_text(text: str) -> str:
-    formatted_text = text.casefold().replace(' ', '_')
+    formatted_text = text.lower().replace(' ', '_')
     return formatted_text
 
 # Nation actions:
 def nationBubbles(top, bottom) -> dict:
-        bubble_keys = [format(title.get_text()) for title in top]
+        bubble_keys = [format_text(title.get_text()) for title in top]
         bubble_values = [key.get_text() for key in bottom]
         bubbles = {}
 
@@ -149,7 +149,7 @@ class NationObject:
             if formatted_value.is_integer():
                 formatted_value = int(formatted_value)
 
-            census[format(title)] = {
+            census[format_text(title)] = {
                 'title': title,
                 'raw_value': raw_value,
                 'value': formatted_value,
@@ -216,13 +216,13 @@ class RegionObject:
         response: dict = request(parser='lxml', url=url)
         soup: bs = response['bs4_soup']
 
-        founder: str = 'None'
-        governor: str = 'None'
-        category: str = 'None'
-        wa_delegate: str = 'None'
-        last_wa_update: str = 'None'
-        region_flag: str = 'None'
-        region_banner: str = 'None'
+        founder: str = None
+        governor: str = None
+        category: str = None
+        wa_delegate: str = None
+        last_wa_update: str = None
+        region_flag: str = None
+        region_banner: str = None
 
         region_cover = soup.find('div', class_='regioncover')
 
@@ -238,7 +238,7 @@ class RegionObject:
         region_content = soup.find('div', id='regioncontent')
         paragraphs: list = region_content.find_all('p', limit=4)
         for text in paragraphs:
-            content = text.get_text().strip()
+            content: str = text.get_text().strip()
             if 'Feeder' in content or 'Sinker' in content or 'Frontier' in content:
                 category = content
             if 'Last WA Update' in content:
@@ -253,7 +253,7 @@ class RegionObject:
         overview = dict(category=category, governor=governor, wa_delegate=wa_delegate, last_wa_update=last_wa_update, founder=founder, region_flag=region_flag, region_banner=region_banner)
         return overview
 
-    def ranks(self, censusid: int):
+    def world_census(self, censusid: int) -> dict:
         region_name: str = self.region_name
         formatted_name: str = format_text(region_name)
         check_if_region_exists(formatted_name)
@@ -263,32 +263,38 @@ class RegionObject:
         response = request(parser='lxml', url=url)
         soup: bs = response['bs4_soup']
 
-        region_rank: dict = {}
+        #region_rank: dict = {}
+        region_rank: list = []
 
         rank_table = soup.find('table', class_='shiny ranks nationranks mcollapse').find_all('tr')
         rank_table.pop(0)
 
         rank_elements = [td.find_all('td', limit=2) for td in rank_table]
-        rank_positions: list = []
-        rank_nations: list = []
+        #rank_positions: list = []
+        #rank_nations: list = []
         for td in rank_elements:
-            position = td[0].get_text().replace('.', '')
+            #position = td[0].get_text().replace('.', '')
             nation = td[1].get_text()
-            rank_positions.append(position)
-            rank_nations.append(nation)
-        for i in range(len(rank_positions)):
-            region_rank.update({rank_positions[i]: rank_nations[i]})
+            #rank_positions.append(position)
+            #rank_nations.append(nation)
+            region_rank.append(nation)
+
+        #for i in range(len(rank_positions)):
+        #    region_rank.update({rank_positions[i]: rank_nations[i]})
         
         page = soup.find('div', id='regioncontent')
         paragraphs = page.find_all('p', limit=2)
 
         description: str = paragraphs[0].get_text()
         region_world_rank: str = paragraphs[1].get_text()
+
         world_census: dict = {'title': page.find('h3').get_text(),
                               'description': description,
                               'region_world_rank': region_world_rank,
                               'rank': region_rank
                               }
+        
+        return world_census
 
     def activity(self, filter: str):
         region_name: str = self.region_name

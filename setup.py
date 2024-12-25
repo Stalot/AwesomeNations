@@ -17,6 +17,6 @@ setup(
     author='Orly Neto',
     author_email='orly2carvalhoneto@gmail.com',
     license='MIT License',
-    keywords=['NationStates', 'Scrapper', 'Web Scrapper'],
+    keywords=['NationStates', 'Scrapper', 'Web Scrapper', 'NationStates scrapper'],
     packages=find_packages(),
     install_requires=['beautifulsoup4==4.12.3', 'requests==2.32.3', 'selenium==4.27.1', 'webdriver-manager==4.0.2'])

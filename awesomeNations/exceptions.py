@@ -13,7 +13,7 @@ class RegionNotFound(Exception):
         self.message = f'Oh no, the region "{region_name}" does not exist. Maybe you forgot a comma? Or did you think programming was easy? Cute.'
         super().__init__(f'{self.message}')
 
-class RequestError(Exception):
+class HTTPError(Exception):
     def __init__(self, status_code) -> None:
-        self.message = f'Request error, status code: {status_code}. Oh, your server did not respond? Classic HTTP - Hope This Totally Pleases-you!'
+        self.message = f'HTTP error, status code: {status_code}. Hope This Totally Pleases-you!'
         super().__init__(f'{self.message}')
