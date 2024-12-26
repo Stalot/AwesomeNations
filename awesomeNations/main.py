@@ -100,4 +100,3 @@ if __name__ == '__main__':
     print(f'{AwesomeNations.Region().exists()=}')
     print(f'{AwesomeNations.Region().get_overview()=}')
     print(f'{AwesomeNations.Region().get_world_census(46)=}')
-    print(f'{AwesomeNations.Region().get_embassies()=}')

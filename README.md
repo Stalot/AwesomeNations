@@ -5,25 +5,22 @@
 
 **AwesomeNations** is a lightweight Python library for scraping data from [NationStates](https://www.nationstates.net), a browser-based nation simulation game. It allows you to collect nation and region data, retrieve census statistics, and much more.
 
-## Features
+**Features:**
+
 - **Nation Data**: Retrieve overviews, census statistics, and existence checks for any nation.
 - **Region Data**: Get details like world census ranks, embassies, and other regional information.
 
----
+**Installation:**
 
-## Installation
-
-Install AwesomeNations using pip:
+You can install AwesomeNations using pip:
 
 ``` bash
 pip install awesomeNations
 ```
 
-## Quick Start
+---
 
-Here’s how to start using AwesomeNations:
-
-**Nation Features**
+**Nation Features:**
 
 Checking if a nation exists:
 ``` python
@@ -41,7 +38,7 @@ nation = awn.Nation
 overview = nation("testlandia").get_overview()
 print(overview)
 ```
-Output (json):
+Output:
 ``` json
 {
     "flag": "www.nationstates.net/images/flags/uploads/testlandia__656619.svg",
@@ -61,7 +58,7 @@ nation = awn.Nation
 census_data = nation("testlandia").get_census([0])
 print(census_data)
 ```
-Output (json):
+Output:
 ``` json
 {
     "civil_rights": {
@@ -72,7 +69,7 @@ Output (json):
 }
 ```
 
-**Region Features**
+**Region Features:**
 
 Check if a region exists:
 ``` python
@@ -99,7 +96,7 @@ region = awn.Region
 rank = region("The Pacific").get_world_census(censusid=46)
 print(rank)
 ```
-Output (json):
+Output:
 ``` json
 {
     "title": "The Most Advanced Defense Forces in the Pacific",
@@ -123,3 +120,18 @@ Output (json):
 - get_overview() -> dict: Retrieve a region's overview.
 - get_world_census(censusid: int) -> dict: Retrieve world census rankings.
 - get_embassies() -> dict: Get details about the region's embassies.
+
+# Updates
+You can se more in the [Changelog](https://github.com/Stalot/AwesomeNations/blob/version/0.1.0/CHANGELOG.md).
+
+Latest version:
+
+### </> 0.1.0 </>:
+**?/?/?**
+- Region support;
+- License addition;
+- Changelog addition;
+- Exceptions improvements;
+- Examples addition;
+- README.md improvements;
+- Public Github repository.

@@ -1,6 +1,6 @@
 from awesomeNations import AwesomeNations as awn
 
-# Result should be something like:
+# The result should be something like:
 
 # Short name: Testlandia
 # Long name: The Hive Mind of Testlandia
@@ -8,13 +8,20 @@ from awesomeNations import AwesomeNations as awn
 # Motto: Fixed, thanks.
 # Region: Testregionia
 # Influence: Eminence Grise
+#
+# Civil Rights: Very Good
+# Economy: Powerhouse
+# Political Freedom: Excellent
 
-def check_nation():
+def search_nation():
     nation_name = str(input('Insert nation name: '))
     nation = awn.Nation(nation_name)
 
-    if not nation.exists():
-        output = fr'"{nation_name}" ¯\_(ツ)_/¯'
+    if not nation_name:
+        output = r'¯\_(ツ)_/¯ Please, gimme a natiom name!'
+        return output
+    elif not nation.exists():
+        output = fr'"{nation_name}" not found. ¯\_(ツ)_/¯'
         return output
 
     data = nation.get_overview()
@@ -23,11 +30,15 @@ Long name: {data['long_name']}
 WA category: {data['wa_category']}
 Motto: {data['motto']}
 Region: {data['bubbles']['region']}
-Influence: {data['bubbles']['influence']}"""
+Influence: {data['bubbles']['influence']}
+
+Civil Rights: {data['bubbles']['civil_rights']}
+Economy: {data['bubbles']['economy']}
+Political Freedom: {data['bubbles']['political_freedom']}"""
     return output
 
 def main():
-    result = check_nation()
+    result = search_nation()
     print(f'\n{result}\n')
     main()
 

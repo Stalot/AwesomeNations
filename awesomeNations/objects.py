@@ -13,7 +13,7 @@ def request(parser: str = DEFAULT_PARSER, url: str = 'https://www.nationstates.n
         return response
 
 def format_text(text: str) -> str:
-    formatted_text = text.lower().replace(' ', '_')
+    formatted_text = text.lower().strip().replace(' ', '_')
     return formatted_text
 
 # Nation actions:
@@ -168,27 +168,33 @@ def check_if_region_exists(region_name: str) -> None:
     if error_p:
         raise RegionNotFound(region_name)
 
-def embassy(divindents: bs, formatted_name: str) -> dict:
-    embassy_section = divindents[3].find('table', class_='shiny wide embassies mcollapse')
-    embassies_dict: dict = {formatted_name: {'total': 0, 'embassies': 'No regional embassies.'}}
-    if embassy_section:
-        embassy_names: list = [name.get_text() for name in embassy_section.find_all('td', class_='bigleft')]
-        embassy_formatted_names: list = []
-        for name in embassy_names:
-            new_name: str = ' '
+def embassy(divindents: bs, default_output: dict) -> dict:
+    embassy_section: bs = divindents[3].find('table', class_='shiny wide embassies mcollapse')
+
+    if not embassy_section:
+        return default_output
+
+    embassy_names: list = [name.get_text() for name in embassy_section.find_all('td', class_='bigleft')]
+    embassy_formatted_names: list = []
+    for name in embassy_names:
+        if str(name[0]).isnumeric():
             split: list = name.split(' ')
             split.pop(0)
-            new_name = new_name.join(split)
+            new_name = ' '.join(split)
             embassy_formatted_names.append(new_name)
-            
-        embassy_durations = [duration.get_text() for duration in embassy_section.find_all('td', class_='')]
+        else:
+            embassy_formatted_names.append(name)
+        
+    embassy_durations = [duration.get_text() for duration in embassy_section.find_all('td', class_='')]
 
-        embassies = []
+    embassies = []
 
-        for i in range(len(embassy_names)):
-            embassies.append({'region': embassy_formatted_names[i], 'duration': embassy_durations[i]})
+    for i in range(len(embassy_names)):
+        if 'Closing' in embassy_durations[i]:
+            embassy_durations[i] = embassy_durations[i].replace('Closing', ' Closing')
+        embassies.append({'region': embassy_formatted_names[i], 'duration': embassy_durations[i]})
 
-        embassies_dict = {formatted_name: {'total': len(embassies), 'embassies': embassies}}
+    embassies_dict = {'total': len(embassies), 'embassies': embassies}
     return embassies_dict
 
 class RegionObject:
@@ -319,11 +325,16 @@ class RegionObject:
         formatted_name: str = format_text(region_name)
         check_if_region_exists(formatted_name)
 
+        default_embassies_output: dict = {'total': 0, 'embassies': None}
+
         url: str = f'https://www.nationstates.net/page=region_admin/region={formatted_name}'
-        source: str = get_dynamic_source(url, '//*[@id="regioncontent"]/div[4]/div/table/tbody/tr[2]')
-        soup: bs = bs(source, DEFAULT_PARSER)
+        source: str = get_dynamic_source(url, '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
 
-        divindents = soup.find_all('div', class_='divindent')
+        if source:
+            soup: bs = bs(source, DEFAULT_PARSER)
 
-        embassies: dict = embassy(divindents, formatted_name)
-        return embassies
+            divindents = soup.find_all('div', class_='divindent')
+
+            embassies: dict = embassy(divindents, default_embassies_output)
+            return embassies
+        return default_embassies_output
