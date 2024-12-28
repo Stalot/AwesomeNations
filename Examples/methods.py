@@ -1,8 +1,8 @@
 from awesomeNations import AwesomeNations as awn
-from pprint import pprint as pp
+from pprint import pprint as pp # fancy print()
 
 nation_name = 'testlandia'
-region_name = 'the allied nations'
+region_name = 'the pacific'
 
 nation = awn.Nation
 region = awn.Region

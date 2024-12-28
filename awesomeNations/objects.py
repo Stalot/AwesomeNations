@@ -135,7 +135,7 @@ class NationObject:
         census = {}
 
         for url in urls:
-            response: dict = request(parser='html.parser', url=url)
+            response: dict = request(parser=DEFAULT_PARSER, url=url)
             soup: bs = response['bs4_soup']
 
             title = soup.find('h2').get_text()
@@ -149,7 +149,7 @@ class NationObject:
             if formatted_value.is_integer():
                 formatted_value = int(formatted_value)
 
-            census[format_text(title)] = {
+            census[format_text(title).replace(':', '')] = {
                 'title': title,
                 'raw_value': raw_value,
                 'value': formatted_value,
