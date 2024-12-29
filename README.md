@@ -1,6 +1,6 @@
 # AwesomeNations
 
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **AwesomeNations** is a lightweight Python library for scraping data from [NationStates](https://www.nationstates.net), a browser-based nation simulation game. It allows you to collect nation and region data, retrieve census statistics, and much more.
