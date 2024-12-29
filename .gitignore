@@ -3,3 +3,4 @@ awesomeNations.egg-info/
 build/
 dist/
 virtual_enviroment/
+.vscode/
