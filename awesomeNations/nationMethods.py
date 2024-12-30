@@ -37,23 +37,24 @@ def summaryBox(box) -> dict:
     return values
 
 def census_url_generator(nation_name: str, id: tuple) -> Iterator:
-      for id in id:
-        yield f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}'
+      for censusid in id:
+        if censusid > 88:
+            raise ValueError(censusid)
+        yield {'url': f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}', 'id': id}
 
-def scrape_census(url: str) -> dict:
+def scrape_census(census_data: dict) -> dict:
     try:
-        response = request(url=url)
+        response = request(url=census_data['url'])
         soup: bs = response
-        # Extract the desired data (adjust as needed)
+
         title = soup.find('h2').get_text()
         value = soup.find('div', class_='censusscoreboxtop').get_text().replace(' ', '')
         bubble_top_line = soup.find_all('div', class_='newmainlinebubbletop')
         bubble_bottom_line = soup.find_all('div', class_='newmainlinebubblebottom')
         bubbles = nationBubbles(bubble_top_line, bubble_bottom_line)
-        
-        return {'title': title, 'value': value, 'bubbles': bubbles}
-    except Exception as e:
-        return ValueError(e)
+        return {'id': census_data['id'], 'title': title, 'value': value, 'bubbles': bubbles}
+    except:
+        return None
 
 def check_if_nation_exists(nation_name: str) -> None:
     url: str = f'https://www.nationstates.net/nation={nation_name}'
@@ -126,25 +127,14 @@ class N:
 
     def census_generator(self, censusid_tuple: tuple) -> Iterator:
         nation_name: str = self.nation_name
-        urls = census_url_generator(nation_name, (id for id in censusid_tuple))
-        with ThreadPoolExecutor(max_workers=20) as executor:  # Adjust the number of workers as needed
-            futures = {executor.submit(scrape_census, url): url for url in urls}
+        generator_data = census_url_generator(nation_name, (id for id in censusid_tuple))
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = {executor.submit(scrape_census, census_data): census_data for census_data in generator_data}
             for future in futures:
                 yield future.result()
 
 if __name__ == '__main__':
-    data = N('unirstate').census_generator((id for id in range(89)))
+    data = census_url_generator('aaa', [i for i in range(200)])
 
-    with open('output.csv', 'w', newline='') as csvfile:
-        fieldnames = ['title', 'value', 'world_rank', 'region_rank']
-        writer = csv.DictWriter(csvfile, fieldnames)
-        
-        writer.writeheader()
-
-        for stuff in data:
-            writer.writerow({
-                'title': stuff['title'],
-                'value': stuff['value'],
-                'world_rank': stuff['bubbles']['world_rank'],
-                'region_rank': stuff['bubbles']['region_rank']
-            })
+    for i in data:
+        print(i)

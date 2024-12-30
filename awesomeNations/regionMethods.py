@@ -16,7 +16,6 @@ def check_if_region_exists(region_name: str) -> None:
 
 def scrape_embassy(url: str, default_embassies_output: dict) -> Iterator:
     source: str = get_dynamic_source(url, '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
-
     try:
         soup: bs = bs(source, DEFAULT_PARSER)
 
@@ -33,7 +32,7 @@ def scrape_embassy(url: str, default_embassies_output: dict) -> Iterator:
                 split: list = name.split(' ')
                 split.pop(0)
                 name = ' '.join(split)
-            yield {'name': name, 'duration': duration}
+            yield {'region': name, 'duration': duration}
     except:
         yield default_embassies_output
 
@@ -178,22 +177,20 @@ class R:
         url: str = f'https://www.nationstates.net/page=activity/view=region.{formatted_name}/filter={filter}'
         source: str = get_dynamic_source(url, '//*[@id="reports"]/ul')
 
-        if source == None:
-            events = 'No results.'
-            ic(events)
+        events = None
+
+        if not source == None:        
+            soup: bs = bs(source, DEFAULT_PARSER)
+            reports = soup.find('div', class_='clickabletimes').find('ul')
+            events = (li.get_text() for li in reports.find_all('li'))
             return events
-        
-        soup: bs = bs(source, DEFAULT_PARSER)
-        reports = soup.find('div', class_='clickabletimes').find('ul')
-        events = [li.get_text() for li in reports.find_all('li')]
-        return events
 
     def embassies(self) -> Iterator:
         region_name: str = self.region_name
         formatted_name: str = format_text(region_name)
         check_if_region_exists(formatted_name)
 
-        default_embassies_output: dict = {None}
+        default_embassies_output: dict = None
         url: str = f'https://www.nationstates.net/page=region_admin/region={formatted_name}'
         embassies: Iterator = scrape_embassy(url, default_embassies_output)
         return embassies

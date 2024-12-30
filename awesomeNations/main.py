@@ -20,9 +20,6 @@ class AwesomeNations:
         age = today - created
         result = f'Around {age-1}-{age} years old.'
         return result
-    
-    def configure(export = None):
-        pass
 
     class Nation:
         """
@@ -83,7 +80,7 @@ class AwesomeNations:
             ranks = R.world_census(self, censusid)
             return ranks
 
-        def get_embassies(self) -> dict:
+        def get_embassies(self) -> Iterator:
             """
             Retrieves the embassies of the requested region.
             """
@@ -101,7 +98,7 @@ if __name__ == '__main__':
     print(f'{AwesomeNations.Nation().get_overview()=}')
     # print(f'{AwesomeNations.Nation().get_census()=}')
 
-    for stuff in AwesomeNations.Nation().get_census((i for i in range(89))):
+    for stuff in AwesomeNations.Nation().get_census((i for i in range(88))):
         print(stuff)
 
     print('REGION')
