@@ -2,21 +2,24 @@ from awesomeNations import AwesomeNations as awn
 
 nation = awn.Nation('testlandia')
 
+# Dictionary key formatting:
+def format_value(value: str):
+    formatted = float(value.replace(',', ''))
+    return formatted
+def format_key(key: str):
+    formatted = key.lower().replace(' ', '_').replace(':', '')
+    return formatted
+
+# Stats:
 def man_power(defense_forces: float = 0, agriculture_sector: float = 0) -> int:
     output: int = max(1000, int((defense_forces) * (agriculture_sector / 100)))
     return output
 
-def quality_of_life(lifespan: float, charmlessness: float) -> int:
+def quality_of_life(lifespan: float = 0, charmlessness: float = 0) -> float:
     output: float = max(0, round(lifespan / charmlessness, 2))
     return output
 
-def format_value(value: str):
-    output = float(value.replace(',', ''))
-    return output
-def format_key(key: str):
-    output = key.lower().replace(' ', '_').replace(':', '')
-    return output
-
+# Main function:
 def main():
     data = list(nation.get_census([46, 17, 44, 64]))
 

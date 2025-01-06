@@ -46,7 +46,7 @@ class AwesomeNations:
             activity = N.activity(self, filters)
             return activity
 
-        def get_census(self, censusid: tuple = [0]) -> Iterator:
+        def get_census(self, censusid: tuple | list = [0]) -> Iterator:
             """
             Gets one or more censuses [0-88] from the requested nation, examples:
             - [0]: Civil rights
@@ -77,7 +77,7 @@ class AwesomeNations:
             overview = R.overview(self)
             return overview
 
-        def get_world_census(self, censusid: int = 0) -> Iterator:
+        def get_world_census(self, censusid: tuple | list = [0]) -> Iterator:
             """
             Retrieves the world census rankings for the requested region.
             """
@@ -98,30 +98,5 @@ class AwesomeNations:
 
 # Testing to see if my life is worth it:
 if __name__ == '__main__':
-    print(f'{AwesomeNations.nationStates_age()=}')
-    print(f'{AwesomeNations.nationStates_birthday()=}')
-
-    print('NATION')
-    print(f'{AwesomeNations.Nation().exists()=}')
-    print(f'{AwesomeNations.Nation().get_overview()=}')
-
-    activity = AwesomeNations.Nation('orlys').get_activity()
-    if activity:
-        for stuff in activity:
-            print(stuff)
-
-    for stuff in AwesomeNations.Nation().get_census((i for i in range(88))):
-        print(stuff)
-
-    print('REGION')
-    print(f'{AwesomeNations.Region().exists()=}')
-    print(f'{AwesomeNations.Region().get_overview()=}')
-    print(f'{AwesomeNations.Region().get_world_census(46)=}')
-
-    activity = AwesomeNations.Region().get_activity()
-    if activity:
-        for stuff in activity:
-            print(stuff)
-
-    for stuff in AwesomeNations.Region().get_embassies():
-        print(stuff)
+    for rank in AwesomeNations.Region().get_world_census([i for i in range(21)]):
+        print(rank, '\n')

@@ -1,4 +1,4 @@
-# AwesomeNations Changelog <(˶ᵔᵕᵔ˶)> 𓂃🖊
+# Awesome Changelog <(˶ᵔᵕᵔ˶)> 𓂃🖊
 
 ### </> 0.1.0 </>:
 **?/?/?**
@@ -8,7 +8,6 @@
 - Changelog addition;
 - Exceptions improvements;
 - Code examples;
-- README.md improvements;
 - Github repository creation;
 - Less cringe.
 

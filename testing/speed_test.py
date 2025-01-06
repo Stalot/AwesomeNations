@@ -1,5 +1,5 @@
 from awesomeNations import AwesomeNations as awn
-from awesomeNations.seleniumScrapper import script_runner, get_dynamic_source
+from awesomeNations.seleniumScrapper import script_runner, get_dynamic_source, dynamic_source
 import time
 import tracemalloc
 
@@ -16,12 +16,17 @@ def speed_test(func):
     return wrapper
 
 @speed_test
-def js_runner():
-    source = script_runner('https://www.nationstates.net/page=activity/view=nation.orlys/filter=all', '//*[@id="loggedout"]/script[13]')
+def original_selenium_scrapper():
+    get_dynamic_source('https://www.nationstates.net/page=region_admin/region=fullworthia', '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
 
 @speed_test
-def dynamic_source():
-    source = get_dynamic_source('https://www.nationstates.net/page=activity/view=nation.orlys/filter=all', '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
+def js_runner_scrapper():
+    script_runner('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '//*[@id="loggedout"]/script[13]')
 
-js_runner()
-dynamic_source()
+@speed_test
+def new_selenium_scrapper():
+    dynamic_source('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '#reports > ul')
+
+original_selenium_scrapper()
+new_selenium_scrapper()
+js_runner_scrapper()

@@ -1,18 +1,18 @@
 from setuptools import setup, find_packages
 
-def description():
+def long_description() -> str:
     long_description: str = ''
-    with open('README.md', 'r') as file:
+    with open('README.md', 'r', encoding='utf-8') as file:
         long_description += file.read()
-    with open('CHANGELOG.md', 'r') as file:
-        long_description += file.read()
+    with open('CHANGELOG.md', 'r', encoding='utf-8') as file:
+        long_description += f'\n\n{file.read()}'
     return long_description
 
 setup(
     name='awesomeNations',
     version='0.0.4',
     description='A simple python web scraping library for NationStates',
-    long_description=open('README.md').read(),
+    long_description=long_description(),
     long_description_content_type='text/markdown',
     author='Orly Neto',
     author_email='orly2carvalhoneto@gmail.com',

@@ -36,7 +36,7 @@ def summaryBox(box) -> dict:
     values = dict(population=population, capital=capital, leader=leader, faith=faith, currency=currency, animal=animal)
     return values
 
-def census_url_generator(nation_name: str, id: tuple) -> Iterator:
+def census_url_generator(nation_name: str, id: tuple | list) -> Iterator:
       for id in id:
         yield {'url': f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}', 'id': id}
 
@@ -140,9 +140,9 @@ class N:
             return events
         return events
 
-    def census_generator(self, censusid_tuple: tuple) -> Iterator:
+    def census_generator(self, censusid: tuple | list) -> Iterator:
         nation_name: str = self.nation_name
-        generator_data = census_url_generator(nation_name, (id for id in censusid_tuple))
+        generator_data = census_url_generator(nation_name, (id for id in censusid))
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = {executor.submit(scrape_census, census_data): census_data for census_data in generator_data}
             for future in futures:

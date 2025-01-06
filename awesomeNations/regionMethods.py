@@ -33,6 +33,30 @@ def embassy_generator(url: str, default_embassies_output: None) -> Iterator:
     except:
         yield default_embassies_output
 
+def scrape_world_census(url: str):
+    try:
+        response = request(parser='lxml', url=url)
+        soup: bs = response
+
+        region_rank: list = []
+
+        rank_table = soup.find('table', class_='shiny ranks nationranks mcollapse').find_all('tr')
+        rank_table.pop(0)
+
+        rank_elements = [td.find_all('td', limit=2) for td in rank_table]
+        for td in rank_elements:
+            nation = td[1].get_text()
+            region_rank.append(nation)
+        
+        page = soup.find('div', id='regioncontent')
+        paragraphs = page.find_all('p', limit=2)
+
+        description: str = paragraphs[0].get_text()
+        region_world_rank: str = paragraphs[1].get_text()
+        return {'title': page.find('h3').get_text(), 'description': description, 'region_world_rank': region_world_rank, 'rank': region_rank}
+    except:
+        return None
+
 class R:
     def __init__(self, region_name: str):
         self.region_name = region_name
@@ -94,48 +118,16 @@ class R:
         overview = dict(category=category, governor=governor, wa_delegate=wa_delegate, last_wa_update=last_wa_update, founder=founder, region_flag=region_flag, region_banner=region_banner)
         return overview
 
-    def world_census(self, censusid: int) -> dict:
+    def world_census(self, censusid: tuple | list) -> Iterator:
         region_name: str = self.region_name
         formatted_name: str = format_text(region_name)
         check_if_region_exists(formatted_name)
 
-        url: str = f'https://www.nationstates.net/page=list_nations/censusid={censusid}/region={formatted_name}'
-        
-        response = request(parser='lxml', url=url)
-        soup: bs = response
+        for id in censusid:
+            url: str = f'https://www.nationstates.net/page=list_nations/censusid={id}/region={formatted_name}'
 
-        #region_rank: dict = {}
-        region_rank: list = []
-
-        rank_table = soup.find('table', class_='shiny ranks nationranks mcollapse').find_all('tr')
-        rank_table.pop(0)
-
-        rank_elements = [td.find_all('td', limit=2) for td in rank_table]
-        #rank_positions: list = []
-        #rank_nations: list = []
-        for td in rank_elements:
-            #position = td[0].get_text().replace('.', '')
-            nation = td[1].get_text()
-            #rank_positions.append(position)
-            #rank_nations.append(nation)
-            region_rank.append(nation)
-
-        #for i in range(len(rank_positions)):
-        #    region_rank.update({rank_positions[i]: rank_nations[i]})
-        
-        page = soup.find('div', id='regioncontent')
-        paragraphs = page.find_all('p', limit=2)
-
-        description: str = paragraphs[0].get_text()
-        region_world_rank: str = paragraphs[1].get_text()
-
-        world_census: dict = {'title': page.find('h3').get_text(),
-                              'description': description,
-                              'region_world_rank': region_world_rank,
-                              'rank': region_rank
-                              }
-        
-        return world_census
+            world_census: dict = scrape_world_census(url)
+            yield world_census
 
     def activity(self, filter: str):
         region_name: str = self.region_name

@@ -22,25 +22,24 @@ def driver_setup():
     return driver
 
 # Wait until element x is present and then get the page source.
-def get_dynamic_source(url: str, xpath):
-    "wait until element x is present and then get the page source"
-    #print(f'Dynamic Selenium required at: {url}')
+def get_dynamic_source(url: str, xpath: str):
     driver = driver_setup()
     driver.get(url)
     try:
-        source = None
-        wait = WebDriverWait(driver, 6)
+        wait = WebDriverWait(driver, 5)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         element = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+
+        source = None
         if element.is_displayed():
             source = driver.page_source
         return source
-    except TimeoutException:
+    except:
         return None
     finally:
         driver.quit()
 
 def script_runner(url: str, script_xpath: str):
-    "Runs js script before extracting page content"
     driver = driver_setup()
     driver.get(url)
     try:
@@ -53,7 +52,8 @@ def script_runner(url: str, script_xpath: str):
         driver.quit()
 
 if __name__ == "__main__":
-    #src = get_dynamic_source('https://www.nationstates.net/page=region_admin/region=fullworthia', '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
-    #print(src)
-    src = script_runner('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '//*[@id="loggedout"]/script[13]')
-    print(src)
+    get_dynamic_source('https://www.nationstates.net/page=region_admin/region=fullworthia', '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
+    print('get_dynamic_source completed')
+
+    script_runner('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '//*[@id="loggedout"]/script[13]')
+    print('script_runner completed')
