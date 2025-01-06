@@ -4,12 +4,14 @@
 **?/?/?**
 - Region support;
 - License addition;
+- Scraping efficiency improvement;
 - Changelog addition;
 - Exceptions improvements;
-- Examples addition;
+- Code examples;
 - README.md improvements;
-- Public Github repository.
+- Github repository creation;
+- Less cringe.
 
 ### </> 0.0.4 </>:
 **22/11/2024**
-- First serious release.
+- First dummy release, hello... World...?

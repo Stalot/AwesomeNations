@@ -1,8 +1,8 @@
 from awesomeNations.exceptions import RegionNotFound
 from awesomeNations.configuration import DEFAULT_PARSER
-from bs4 import BeautifulSoup as bs
 from awesomeNations.seleniumScrapper import get_dynamic_source
 from awesomeNations.sharedMethods import request, format_text
+from bs4 import BeautifulSoup as bs
 from typing import Iterator
 
 def check_if_region_exists(region_name: str) -> None:
@@ -14,16 +14,13 @@ def check_if_region_exists(region_name: str) -> None:
     if error_p:
         raise RegionNotFound(region_name)
 
-def scrape_embassy(url: str, default_embassies_output: dict) -> Iterator:
+def embassy_generator(url: str, default_embassies_output: None) -> Iterator:
     source: str = get_dynamic_source(url, '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
     try:
         soup: bs = bs(source, DEFAULT_PARSER)
 
         divindents: bs = soup.find_all('div', class_='divindent')
         embassy_table: bs = divindents[3].find('table', class_='shiny wide embassies mcollapse')
-
-        # embassy_names = [name.get_text() for name in embassy_table.find_all('td', class_='bigleft')]
-        # embassy_durations = [duration.get_text() for duration in embassy_table.find_all('td', class_='')]
 
         for n, d in zip(embassy_table.find_all('td', class_='bigleft'), embassy_table.find_all('td', class_='')):
             name = n.get_text()
@@ -35,35 +32,6 @@ def scrape_embassy(url: str, default_embassies_output: dict) -> Iterator:
             yield {'region': name, 'duration': duration}
     except:
         yield default_embassies_output
-
-def embassy(divindents: bs, default_output: dict) -> dict:
-    embassy_section: bs = divindents[3].find('table', class_='shiny wide embassies mcollapse')
-
-    if not embassy_section:
-        return default_output
-
-    embassy_names: list = [name.get_text() for name in embassy_section.find_all('td', class_='bigleft')]
-    embassy_formatted_names: list = []
-    for name in embassy_names:
-        if str(name[0]).isnumeric():
-            split: list = name.split(' ')
-            split.pop(0)
-            new_name = ' '.join(split)
-            embassy_formatted_names.append(new_name)
-        else:
-            embassy_formatted_names.append(name)
-        
-    embassy_durations = [duration.get_text() for duration in embassy_section.find_all('td', class_='')]
-
-    embassies = []
-
-    for i in range(len(embassy_names)):
-        if 'Closing' in embassy_durations[i]:
-            embassy_durations[i] = embassy_durations[i].replace('Closing', ' Closing')
-        embassies.append({'region': embassy_formatted_names[i], 'duration': embassy_durations[i]})
-
-    embassies_dict = {'total': len(embassies), 'embassies': embassies}
-    return embassies_dict
 
 class R:
     def __init__(self, region_name: str):
@@ -184,13 +152,14 @@ class R:
             reports = soup.find('div', class_='clickabletimes').find('ul')
             events = (li.get_text() for li in reports.find_all('li'))
             return events
+        return events
 
     def embassies(self) -> Iterator:
         region_name: str = self.region_name
         formatted_name: str = format_text(region_name)
         check_if_region_exists(formatted_name)
 
-        default_embassies_output: dict = None
+        default_embassies_output: None = None
         url: str = f'https://www.nationstates.net/page=region_admin/region={formatted_name}'
-        embassies: Iterator = scrape_embassy(url, default_embassies_output)
+        embassies: Iterator = embassy_generator(url, default_embassies_output)
         return embassies

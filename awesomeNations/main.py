@@ -42,6 +42,10 @@ class AwesomeNations:
             overview = N(self.nation_name).overview()
             return overview
 
+        def get_activity(self, filters: str = 'all') -> Iterator:
+            activity = N.activity(self, filters)
+            return activity
+
         def get_census(self, censusid: tuple = [0]) -> Iterator:
             """
             Gets one or more censuses [0-88] from the requested nation, examples:
@@ -73,12 +77,16 @@ class AwesomeNations:
             overview = R.overview(self)
             return overview
 
-        def get_world_census(self, censusid: int) -> dict:
+        def get_world_census(self, censusid: int = 0) -> Iterator:
             """
             Retrieves the world census rankings for the requested region.
             """
             ranks = R.world_census(self, censusid)
             return ranks
+
+        def get_activity(self, filters: str = 'all') -> Iterator:
+            activity = R.activity(self, filters)
+            return activity
 
         def get_embassies(self) -> Iterator:
             """
@@ -96,7 +104,11 @@ if __name__ == '__main__':
     print('NATION')
     print(f'{AwesomeNations.Nation().exists()=}')
     print(f'{AwesomeNations.Nation().get_overview()=}')
-    # print(f'{AwesomeNations.Nation().get_census()=}')
+
+    activity = AwesomeNations.Nation('orlys').get_activity()
+    if activity:
+        for stuff in activity:
+            print(stuff)
 
     for stuff in AwesomeNations.Nation().get_census((i for i in range(88))):
         print(stuff)
@@ -105,7 +117,11 @@ if __name__ == '__main__':
     print(f'{AwesomeNations.Region().exists()=}')
     print(f'{AwesomeNations.Region().get_overview()=}')
     print(f'{AwesomeNations.Region().get_world_census(46)=}')
-    # print(f'{AwesomeNations.Region().get_embassies()=}')
+
+    activity = AwesomeNations.Region().get_activity()
+    if activity:
+        for stuff in activity:
+            print(stuff)
 
     for stuff in AwesomeNations.Region().get_embassies():
         print(stuff)

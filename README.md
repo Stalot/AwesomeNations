@@ -1,4 +1,8 @@
-# AwesomeNations
+<p align="center">
+  <img src="https://i.imgur.com/yQ9gI82.png" />
+</p>
+
+<h1 align="center">AwesomeNations</h1>	
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)

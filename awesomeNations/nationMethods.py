@@ -1,10 +1,10 @@
 from awesomeNations.exceptions import NationNotFound
-from bs4 import BeautifulSoup as bs
 from awesomeNations.sharedMethods import request, format_text
+from awesomeNations.configuration import DEFAULT_PARSER
+from awesomeNations.seleniumScrapper import get_dynamic_source, script_runner
+from bs4 import BeautifulSoup as bs
 from typing import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from awesomeNations.configuration import DEFAULT_PARSER
-import csv
 
 def nationBubbles(top, bottom) -> dict:
         bubble_keys = [format_text(title.get_text()) for title in top]
@@ -37,9 +37,7 @@ def summaryBox(box) -> dict:
     return values
 
 def census_url_generator(nation_name: str, id: tuple) -> Iterator:
-      for censusid in id:
-        if censusid > 88:
-            raise ValueError(censusid)
+      for id in id:
         yield {'url': f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}', 'id': id}
 
 def scrape_census(census_data: dict) -> dict:
@@ -124,6 +122,23 @@ class N:
                     }
 
         return overview
+
+    def activity(self, filters: str):
+        nation_name: str = self.nation_name
+        formatted_name: str = format_text(nation_name)
+        check_if_nation_exists(formatted_name)
+
+        url: str = f'https://www.nationstates.net/page=activity/view=nation.{formatted_name}/filter={filters}'
+        source: str = get_dynamic_source(url, '//*[@id="reports"]/ul')
+
+        events = None
+
+        if not source == None:        
+            soup: bs = bs(source, DEFAULT_PARSER)
+            reports = soup.find('div', class_='clickabletimes').find('ul')
+            events = (li.get_text() for li in reports.find_all('li'))
+            return events
+        return events
 
     def census_generator(self, censusid_tuple: tuple) -> Iterator:
         nation_name: str = self.nation_name

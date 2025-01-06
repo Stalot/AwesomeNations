@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 def description():
-    desc: str
+    long_description: str = ''
     with open('README.md', 'r') as file:
-        desc += file.read()
-    return desc
-
-
+        long_description += file.read()
+    with open('CHANGELOG.md', 'r') as file:
+        long_description += file.read()
+    return long_description
 
 setup(
     name='awesomeNations',
