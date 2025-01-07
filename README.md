@@ -37,11 +37,11 @@ for census in AwesomeData:
 Output:
 
 ``` bash
-{'id': 0, 'title': 'Civil Rights', 'value': '65.50', 'bubbles': {'world_rank': '95,716th', 'region_rank': '11th'}}
-{'id': 2, 'title': 'Political Freedom', 'value': '70.86', 'bubbles': {'world_rank': '87,533rd', 'region_rank': '12th'}}
-{'id': 4, 'title': 'Wealth Gaps', 'value': '1.41', 'bubbles': {'world_rank': '285,631st', 'region_rank': '43rd'}}
-{'id': 46, 'title': 'Defense Forces', 'value': '7,512.87', 'bubbles': {'world_rank': '26,064th', 'region_rank': '12th'}}
-{'id': 88, 'title': 'Food Quality', 'value': '139.90', 'bubbles': {'world_rank': '13,297th', 'region_rank': '6th'}}
+{'title': 'Civil Rights', 'value': '65.50', 'bubbles': {'world_rank': '96,109th', 'region_rank': '12th'}}
+{'title': 'Political Freedom', 'value': '70.86', 'bubbles': {'world_rank': '88,471st', 'region_rank': '13th'}}
+{'title': 'Wealth Gaps', 'value': '1.41', 'bubbles': {'world_rank': '288,472nd', 'region_rank': '44th'}}
+{'title': 'Defense Forces', 'value': '7,512.87', 'bubbles': {'world_rank': '26,476th', 'region_rank': '12th'}}      
+{'title': 'Food Quality', 'value': '139.90', 'bubbles': {'world_rank': '13,306th', 'region_rank': '6th'}}
 ```
 
 Nation overview:

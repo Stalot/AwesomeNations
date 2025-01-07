@@ -4,6 +4,9 @@ from typing import Iterator
 from datetime import datetime
 
 class AwesomeNations:
+    """
+    Hello! I'm the main class of this library and I'm very excited to work with you!
+    """
     def nationStates_birthday() -> bool:
         "Today is 11/13?"
         today = datetime.today()
@@ -100,7 +103,6 @@ class AwesomeNations:
             """
             embassies = R.embassies(self)
             return embassies
-
 
 # Testing to see if my life is worth it:
 if __name__ == '__main__':

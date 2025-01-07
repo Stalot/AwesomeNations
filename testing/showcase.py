@@ -1,7 +1,8 @@
 from awesomeNations import AwesomeNations as awn
 
-region = awn.Region('The Pacific')
+nation = awn.Nation('testlandia')
 
-embassies = region.get_embassies()
-for embassy in embassies:
-    print(embassy)
+AwesomeData = nation.get_census((0, 2, 4, 46, 88)) # Returns a generator object
+
+for census in AwesomeData:
+    print(census)

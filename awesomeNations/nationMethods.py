@@ -38,11 +38,11 @@ def summaryBox(box) -> dict:
 
 def census_url_generator(nation_name: str, id: tuple | list) -> Iterator:
       for id in id:
-        yield {'url': f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}', 'id': id}
+        yield f'https://www.nationstates.net/nation={nation_name}/detail=trend/censusid={id}'
 
-def scrape_census(census_data: dict) -> dict:
+def scrape_census(url: str) -> dict:
     try:
-        response = request(url=census_data['url'])
+        response = request(url=url)
         soup: bs = response
 
         title = soup.find('h2').get_text()
@@ -50,7 +50,7 @@ def scrape_census(census_data: dict) -> dict:
         bubble_top_line = soup.find_all('div', class_='newmainlinebubbletop')
         bubble_bottom_line = soup.find_all('div', class_='newmainlinebubblebottom')
         bubbles = nationBubbles(bubble_top_line, bubble_bottom_line)
-        return {'id': census_data['id'], 'title': title, 'value': value, 'bubbles': bubbles}
+        return {'title': title, 'value': value, 'bubbles': bubbles}
     except:
         return None
 
@@ -142,14 +142,14 @@ class N:
 
     def census_generator(self, censusid: tuple | list) -> Iterator:
         nation_name: str = self.nation_name
-        generator_data = census_url_generator(nation_name, (id for id in censusid))
+        urls = census_url_generator(nation_name, (id for id in censusid))
         with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = {executor.submit(scrape_census, census_data): census_data for census_data in generator_data}
+            futures = {executor.submit(scrape_census, url): url for url in urls}
             for future in futures:
                 yield future.result()
 
 if __name__ == '__main__':
-    data = census_url_generator('aaa', [i for i in range(200)])
+    data = N('orlys').census_generator([i for i in range(89)])
 
     for i in data:
         print(i)

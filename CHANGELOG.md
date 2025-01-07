@@ -2,7 +2,7 @@
 
 ## </> 0.1.0 </>:
 
-**?/?/?**
+**07/01/2025**
 
 - Region support;
 - License addition;
