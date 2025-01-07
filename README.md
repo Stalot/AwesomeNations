@@ -15,11 +15,11 @@ You can install AwesomeNations using pip:
 pip install awesomeNations
 ```
 
-Easy, quick and almost make me forget I spent months of my life to make this thing work! **Help me**
+Easy, quick and almost make me forget I spent months of my life to make this thing work!
 
 ---
 
-### Nation Features: ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+## Nation Features: ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
 
 You can get censuses from a nation doing this:
 
@@ -141,7 +141,7 @@ Output:
 5 days ago: Testlandia altered its national flag.
 ```
 
-### Region Features: ⸜(｡˃ ᵕ ˂ )⸝♡
+## Region Features: ⸜(｡˃ ᵕ ˂ )⸝♡
 
 Region overview:
 
@@ -203,18 +203,19 @@ Output:
 ...
 ```
 
-# Reference 三三ᕕ( ᐛ )ᕗ
+## Reference 三三ᕕ( ᐛ )ᕗ
 
 **Nation Methods:**
 
 - exists() -> bool: Check if a nation exists.
 - get_overview() -> dict: Get an overview of a nation.
-- get_activity() -> Iterator: Retrieve nation activity.
+- get_activity() -> Iterator: Retrieve nation happenings.
 - get_census() -> Iterator: Retrieve census data.
 
 **Region Methods:**
 
 - exists() -> bool: Check if a region exists.
-- get_overview() -> dict: Retrieve a region's overview.
-- get_activity() -> Iterator: Retrieve world census rankings.
+- get_overview() -> dict: Returns an overview of a region.
+- get_activity() -> Iterator: Retrieve region happenings.
+- get_world_census() -> Iterator: Retrieve region's world census rankings.
 - get_embassies() -> Iterator: Get details about the region's embassies.

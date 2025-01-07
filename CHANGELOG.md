@@ -1,7 +1,9 @@
 # Awesome Changelog <(˶ᵔᵕᵔ˶)> 𓂃🖊
 
-### </> 0.1.0 </>:
+## </> 0.1.0 </>:
+
 **?/?/?**
+
 - Region support;
 - License addition;
 - Scraping efficiency improvement;
@@ -11,6 +13,8 @@
 - Github repository creation;
 - Less cringe.
 
-### </> 0.0.4 </>:
+## </> 0.0.4 </>:
+
 **22/11/2024**
+
 - First dummy release, hello... World...?

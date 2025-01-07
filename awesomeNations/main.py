@@ -98,5 +98,24 @@ class AwesomeNations:
 
 # Testing to see if my life is worth it:
 if __name__ == '__main__':
+    nation = (AwesomeNations.Nation('testlandia'))
+    region = (AwesomeNations.Region('The Pacific'))
+
+    print('NATION:')
+    print(f'{nation.exists()=}\n')
+    print(f'{nation.get_overview()=}\n')
+    for activity in nation.get_activity():
+        print(activity)
+    print('\n')
+    for census in nation.get_census([i for i in range(21)]):
+        print(census)
+    
+    print('REGION:')
+    print(f'{region.exists()=}\n')
+    print(f'{region.get_overview()=}\n')
+    for activity in region.get_activity():
+        print(activity)
+    for embassy in region.get_embassies():
+        print(embassy)
     for rank in AwesomeNations.Region().get_world_census([i for i in range(21)]):
         print(rank, '\n')
