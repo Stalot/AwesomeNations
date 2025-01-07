@@ -209,13 +209,13 @@ Output:
 
 - exists() -> bool: Check if a nation exists.
 - get_overview() -> dict: Get an overview of a nation.
-- get_activity() -> Iterator: Retrieve nation happenings.
+- get_activity() -> Iterator: Retrieve national happenings.
 - get_census() -> Iterator: Retrieve census data.
 
 **Region Methods:**
 
 - exists() -> bool: Check if a region exists.
 - get_overview() -> dict: Returns an overview of a region.
-- get_activity() -> Iterator: Retrieve region happenings.
+- get_activity() -> Iterator: Retrieve regional happenings.
 - get_world_census() -> Iterator: Retrieve region's world census rankings.
-- get_embassies() -> Iterator: Get details about the region's embassies.
+- get_embassies() -> Iterator: Retrieves embassies of the requested region.

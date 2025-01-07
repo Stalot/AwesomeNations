@@ -1,5 +1,4 @@
 from awesomeNations import AwesomeNations as awn
-from awesomeNations.seleniumScrapper import script_runner, get_dynamic_source, dynamic_source
 import time
 import tracemalloc
 
@@ -16,17 +15,9 @@ def speed_test(func):
     return wrapper
 
 @speed_test
-def original_selenium_scrapper():
-    get_dynamic_source('https://www.nationstates.net/page=region_admin/region=fullworthia', '//*[contains(concat( " ", @class, " " ), concat( " ", "divindent", " " ))] | //*[contains(concat( " ", @class, " " ), concat( " ", "mcollapse", " " ))]')
+def get_census():
+    nation = awn.Nation('testlandia')
+    for census in nation.get_census(i for i in range(89)):
+        print(census)
 
-@speed_test
-def js_runner_scrapper():
-    script_runner('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '//*[@id="loggedout"]/script[13]')
-
-@speed_test
-def new_selenium_scrapper():
-    dynamic_source('https://www.nationstates.net/page=activity/view=nation.democratic_fun', '#reports > ul')
-
-original_selenium_scrapper()
-new_selenium_scrapper()
-js_runner_scrapper()
+get_census()

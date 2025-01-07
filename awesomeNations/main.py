@@ -43,6 +43,9 @@ class AwesomeNations:
             return overview
 
         def get_activity(self, filters: str = 'all') -> Iterator:
+            """
+            Get national happenings of the requested nation.
+            """
             activity = N.activity(self, filters)
             return activity
 
@@ -79,18 +82,21 @@ class AwesomeNations:
 
         def get_world_census(self, censusid: tuple | list = [0]) -> Iterator:
             """
-            Retrieves the world census rankings for the requested region.
+            Retrieves a world census of the requested region.
             """
             ranks = R.world_census(self, censusid)
             return ranks
 
         def get_activity(self, filters: str = 'all') -> Iterator:
+            """
+            Get regional happenings of the requested region.
+            """
             activity = R.activity(self, filters)
             return activity
 
         def get_embassies(self) -> Iterator:
             """
-            Retrieves the embassies of the requested region.
+            Retrieves embassies of the requested region.
             """
             embassies = R.embassies(self)
             return embassies

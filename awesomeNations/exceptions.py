@@ -35,11 +35,6 @@ def motivational_quotes():
     index = int(len(quotes) * random())
     return quotes[index]
 
-class CensusNotFound(Exception):
-    def __init__(self, censusid) -> None:
-        self.message = f'Nice try! But censusid={censusid} is out of range. 88 is the maximum - did you forget, or were you hoping I would let it slide? Check your input. I do not do favors.\nJokes aside, {motivational_quotes()}'
-        super().__init__(f'{self.message}')
-
 class NationNotFound(Exception):
     def __init__(self, nation_name) -> None:
         self.message = f'Nation "{nation_name}" not found, perhaps this nation no longer exists or never existed.'
