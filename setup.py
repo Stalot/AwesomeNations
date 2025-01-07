@@ -10,7 +10,7 @@ def long_description() -> str:
 
 setup(
     name='awesomeNations',
-    version='0.1.0.1',
+    version='0.1.0',
     description='A simple python web scraping library for NationStates',
     long_description=long_description(),
     long_description_content_type='text/markdown',
@@ -19,4 +19,4 @@ setup(
     license='MIT License',
     keywords=['NationStates', 'Scrapper', 'Web Scrapper', 'NationStates scrapper'],
     packages=find_packages(),
-    install_requires=['beautifulsoup4==4.12.3', 'requests==2.32.3', 'selenium==4.27.1', 'webdriver-manager==4.0.2'])
+    install_requires=['beautifulsoup4==4.12.3', 'requests==2.32.3', 'selenium==4.27.1', 'webdriver-manager==4.0.2', 'lxml==5.3.0'])
