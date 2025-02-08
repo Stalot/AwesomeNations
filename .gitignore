@@ -2,5 +2,7 @@ __pycache__/
 awesomeNations.egg-info/
 build/
 dist/
-virtual_enviroment/
+.venv/
 .vscode/
+junk/
+.env

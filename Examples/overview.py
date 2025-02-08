@@ -1,45 +1,55 @@
-from awesomeNations import AwesomeNations as awn
+from awesomeNations import AwesomeNations
 
-# The result should be something like:
+#  █████╗ ██╗    ██╗███████╗███████╗ ██████╗ ███╗   ███╗███████╗
+# ██╔══██╗██║    ██║██╔════╝██╔════╝██╔═══██╗████╗ ████║██╔════╝
+# ███████║██║ █╗ ██║█████╗  ███████╗██║   ██║██╔████╔██║█████╗  
+# ██╔══██║██║███╗██║██╔══╝  ╚════██║██║   ██║██║╚██╔╝██║██╔══╝  
+# ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
+# ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-# Short name: Testlandia
-# Long name: The Hive Mind of Testlandia
+# The result should be something like this:
+# Name: Testlandia
+# Full name: The Hive Mind of Testlandia
 # WA category: Inoffensive Centrist Democracy
-# Motto: Fixed, thanks.
+# Motto: New forum when?
 # Region: Testregionia
-# Influence: Eminence Grise
+# Influence: Powerbroker
 #
 # Civil Rights: Very Good
 # Economy: Powerhouse
 # Political Freedom: Excellent
 
+awesomeAPI = AwesomeNations("My Awesome Application")
+
 def search_nation():
     nation_name = str(input('Insert nation name: '))
-    nation = awn.Nation(nation_name)
+    nation = awesomeAPI.Nation(nation_name)
 
     if not nation_name:
-        output = r'¯\_(ツ)_/¯ Please, gimme a natiom name!'
+        output = r'¯\_(ツ)_/¯ Please, gimme a nation name!'
         return output
     elif not nation.exists():
-        output = fr'"{nation_name}" not found. ¯\_(ツ)_/¯'
+        output = fr'"{nation_name}" not found!'
         return output
 
-    data = nation.get_overview()
-    output = f"""Short name: {data['short_name']}
-Long name: {data['long_name']}
-WA category: {data['wa_category']}
-Motto: {data['motto']}
-Region: {data['bubbles']['region']}
-Influence: {data['bubbles']['influence']}
+    api_data = nation.get_public_shards()
+    data = api_data["nation"]
+    output = f"""Name: {data["name"]}
+Full name: {data["fullname"]}
+WA category: {data["category"]}
+Motto: {data["motto"]}
+Region: {data["region"]}
+Influence: {data["influence"]}
 
-Civil Rights: {data['bubbles']['civil_rights']}
-Economy: {data['bubbles']['economy']}
-Political Freedom: {data['bubbles']['political_freedom']}"""
+Civil Rights: {data["freedom"]["civilrights"]}
+Economy: {data["freedom"]["economy"]}
+Political Freedom: {data["freedom"]["politicalfreedom"]}"""
     return output
 
 def main():
     result = search_nation()
-    print(f'\n{result}\n')
+    print(f'\n{result}')
+    print("-"*60, end="\n")
     main()
 
 # Testing whether our work was worth it... (Maybe not)
