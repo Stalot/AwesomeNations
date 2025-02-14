@@ -4,10 +4,13 @@ import time
 from random import random
 
 def string_is_number(string: str) -> bool:
-    if type(string) is not str:
-        raise TypeError(string)
-    pattern = re.compile(r'^-?\d+(\.\d+)?$')
-    return bool(pattern.match(string))
+    if type(string) != str:
+        raise TypeError(f"{type(string).__name__} {string} is not a string.")
+    try:
+        complex(string)
+        return True
+    except ValueError:
+        return False
 
 def format_key(string: str = None, uppercase: bool = False, replace_empty: str = None, delete_not_alpha: bool = False) -> str:
     formatted_string = None
