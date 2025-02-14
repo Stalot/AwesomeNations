@@ -1,9 +1,16 @@
 from awesomeNations.exceptions import HTTPError
-from awesomeNations.customMethods import check_nationstates_api_ratelimit
 from awesomeNations.customObjects import AwesomeParser
 import requests
+import time
 
 parser = AwesomeParser()
+
+def check_nationstates_api_ratelimit(limit_remaining: int = None, reset_delay: int = None) -> None:
+    """
+    Checks the NationStates API ratelimit and time sleeps the code if the request limit is reached.
+    """
+    if limit_remaining <= 1:
+        time.sleep(reset_delay + 1)
 
 class WrapperConnection():
     def __init__(self,

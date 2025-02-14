@@ -4,5 +4,5 @@ from pprint import pprint as pp # Normal printing, but more pretty!
 awn = AwesomeNations("My cute app/0.0.1")
 
 nation = awn.Nation
-censuses = nation("Nationuraniume Missile silo 37").get_public_shards("census", scale="all")
+censuses = nation("unirstate").get_public_shards("census", scale="76")
 pp(censuses)

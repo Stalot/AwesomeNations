@@ -1,7 +1,6 @@
 import xmltodict
 from pprint import pprint as pp
 from awesomeNations.customMethods import format_key, string_is_number
-from decimal import Decimal
 
 def xml_postprocessor(path, key: str, value: str):
     key = format_key(key, replace_empty="_", delete_not_alpha=True)

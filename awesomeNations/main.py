@@ -2,7 +2,6 @@ from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customMethods import join_keys, format_key
 from datetime import datetime
 from bs4 import BeautifulSoup as bs
-from pprint import pprint as pp
 from pathlib import Path
 
 wrapper = WrapperConnection()

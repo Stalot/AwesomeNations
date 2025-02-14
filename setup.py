@@ -10,7 +10,7 @@ def long_description() -> str:
 
 setup(
     name='awesomeNations',
-    version='1.0.0',
+    version='1.0.1',
     description='A simple and cozy wrapper for NationStates',
     long_description=long_description(),
     long_description_content_type='text/markdown',
