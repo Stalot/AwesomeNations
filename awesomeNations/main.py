@@ -5,6 +5,10 @@ from bs4 import BeautifulSoup as bs
 from pathlib import Path
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
+from awesomeNations.customObjects import Authentication
+from typing import Optional
+from dotenv import load_dotenv
+import os
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -15,16 +19,12 @@ class AwesomeNations():
 
     Welcome! I'm the main class of this library and can't wait to collaborate with you! Feel free to explore my [GitHub repository](https://github.com/Stalot/AwesomeNations) and report any issues [here](https://github.com/Stalot/AwesomeNations/issues).
 
-    ---
-
     ## 📚 Useful References
 
     Here are some helpful links for coding guidelines and references. Please note that these resources may change over time:
 
     - 📖 [NationStates API Documentation](https://www.nationstates.net/pages/api.html)  
     - ⚖️ [NationStates Script Rules for HTML site](https://forum.nationstates.net/viewtopic.php?p=16394966#p16394966)
-    
-    ---
     
     ## ⚙️ Class Arguments
     
@@ -66,7 +66,7 @@ class AwesomeNations():
                  ratelimit_reset_time: int = 30,
                  api_version: int = 12):
 
-        headers = {
+        headers: dict = {
         "User-Agent": user_agent,
         "Cache-Control": "no-cache",
         }
@@ -167,8 +167,11 @@ class AwesomeNations():
         """
         Class dedicated to NationStates nation API.
         """
-        def __init__(self, nation_name: str = 'testlandia') -> None:
-            self.nation_name = format_key(nation_name, False, '%20')
+        def __init__(self,
+                     nation_name: str = 'testlandia',
+                     auth: Optional[Authentication] = None) -> None:
+            self.nation_name: str = format_key(nation_name, False, '%20')
+            self.nation_authentication: Authentication = auth
 
         def exists(self) -> bool:
             """
@@ -196,15 +199,14 @@ class AwesomeNations():
             ### Shards:
             If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
             """
-            
             for kwarg in kwargs:
                 if type(kwargs[kwarg]) != str:
                     kwargs[kwarg] = join_keys(kwargs[kwarg])
             params: str | None = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url = url_manager.generate_shards_url(shards, params)
+            url: str = url_manager.generate_shards_url(shards, params)
             url = url.format("nation", self.nation_name)
-            print(url)
-            response = wrapper.fetch_api_data(url)
+            wrapper.auth = self.nation_authentication
+            response: dict = wrapper.fetch_api_data(url)
             return response
 
     class Region: 
@@ -243,15 +245,17 @@ class AwesomeNations():
                 if type(kwargs[kwarg]) != str:
                     kwargs[kwarg] = join_keys(kwargs[kwarg])
             params: str | None = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url = url_manager.generate_shards_url(shards, params)
+            url: str = url_manager.generate_shards_url(shards, params)
             url = url.format("region", self.region_name)
-            response = wrapper.fetch_api_data(url)
+            response: dict = wrapper.fetch_api_data(url)
             return response
 
 if __name__ == "__main__":
+    load_dotenv(".env")
     api = AwesomeNations("AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)")
-    nation = api.Nation("Orlys")
+    my_nation_auth = Authentication(os.environ["CALAMITY_PASSWORD"])
+    nation = api.Nation("The Hosts of Calamity", my_nation_auth)
     region = api.Region("Fullworthia")
     
-    data = nation.get_shards(["census", "fullname"], scale=(45, 32))
+    data = region.get_shards("census", scale=[67, 87, 32])
     pp(data)

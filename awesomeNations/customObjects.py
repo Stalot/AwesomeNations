@@ -2,6 +2,8 @@ import xmltodict
 from pprint import pprint as pp
 from awesomeNations.customMethods import format_key, string_is_number
 from typing import Optional
+import string
+import random
 
 def xml_postprocessor(path, key: str, value: str):
     key = format_key(key, replace_empty="_", delete_not_alpha=True)
@@ -24,33 +26,60 @@ class AwesomeParser():
         parsed_xml: dict = xmltodict.parse(xml, postprocessor=xml_postprocessor)
         return parsed_xml
 
+class Criptografy():
+    "Basic substitution criptography!"
+    def __init__(self):
+        self.chars = " " + string.punctuation + string.digits + string.ascii_letters
+        self.chars = list(self.chars)
+        self.key = self.chars.copy()
+        random.shuffle(self.key)
+     
+     # Encrypt stuff :D
+    def encrypt(self, message_to_encrypt: str) -> str:
+        plain_text = message_to_encrypt
+        cipher_text = ""
+        for letter in plain_text:
+            index = self.chars.index(letter)
+            cipher_text += self.key[index]
+        return cipher_text
+
+    # Decrypt stuff :D
+    def decrypt(self, message_to_decrypt: str) -> str:
+        cipher_text = message_to_decrypt
+        plain_text = ""
+        for letter in cipher_text:
+            index = self.key.index(letter)
+            plain_text += self.chars[index]
+        return plain_text
+    
+    def exhaust(self):
+        self.key = self.chars.copy()
+        random.shuffle(self.key)
+
 class Authentication():
-    def __init__(self, password: Optional[str] = None, autologin: Optional[str] = None):
+    def __init__(self,
+                 password: Optional[str] = None,
+                 autologin: Optional[str] = None):
         self.password = password
         self.autologin = autologin
+        self.xpin: Optional[int] = None
     
     def get(self) -> dict[str]:
         auth_headers: dict[str] = {
             "X-Password": self.password if self.password else "",
-            "X-Autologin": self.autologin if self.autologin else ""
+            "X-Autologin": self.autologin if self.autologin else "",
+            "X-Pin": self.xpin if self.xpin else ""
         }
         return auth_headers
 
 if __name__ == "__main__":
-    myXML = """
-<NATION id="unirstate">
-    <CENSUS>
-        <SCALE id="76">
-            <SCORE>2.386847e+15</SCORE>
-            <RANK>11169</RANK>
-            <RRANK>1</RRANK>
-        </SCALE>
-    </CENSUS>
-</NATION>
-"""
+    criptografy = Criptografy()
     
-    parser = AwesomeParser()
-    data = parser.parse_xml(myXML)
+    msg1 = criptografy.encrypt("Hello!")
+    msg2 = criptografy.encrypt("Hello!")
+    print(criptografy.decrypt(msg1), msg1)
+    print(criptografy.decrypt(msg2), msg2)
+    criptografy.exhaust()
     
-    pp(data)
-    
+    msg3 = criptografy.encrypt("Hello!")
+    print(criptografy.decrypt(msg3), msg3)

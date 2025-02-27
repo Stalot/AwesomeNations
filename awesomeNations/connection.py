@@ -8,6 +8,10 @@ from pprint import pprint as pp
 from typing import Optional
 import os
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger("AwesomeLogger")
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 parser = AwesomeParser()
 
@@ -30,16 +34,16 @@ class WrapperConnection():
         self.api_version = api_version
         
         self.request_headers: dict = {}
+        self.auth: Optional[Authentication] = None
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
                        query_parameters: None = None,
-                       stream: bool = False,
-                       auth: Authentication = None) -> dict:
+                       stream: bool = False) -> dict:
         url += f"&v={self.api_version}"
         
-        if auth:
-            self.request_headers.update(auth.get())
+        if self.auth:
+            self.headers.update(self.auth.get())
         
         response = urllib3.request("GET", url, headers=self.headers, timeout=self.request_timeout)
 
@@ -47,6 +51,7 @@ class WrapperConnection():
             raise HTTPError(response.status)
         
         self.request_headers.update(response.headers)
+        self.headers.update({"X-Pin": response.headers["X-Pin"]}) if response.headers.get("X-Pin") else ...
         
         ratelimit_remaining: str | None = self.request_headers.get("Ratelimit-remaining")
         self.ratelimit_remaining = int(ratelimit_remaining) if ratelimit_remaining else None
@@ -68,10 +73,13 @@ class WrapperConnection():
 
     def api_ratelimit(self) -> None:
         """
-        Checks the NationStates API ratelimit and time sleeps the code if the request limit is reached.
+        Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
-        if self.ratelimit_remaining and self.ratelimit_remaining <= 1:
-            time.sleep(self.ratelimit_sleep + 1)
+        if self.ratelimit_remaining:
+            if self.ratelimit_remaining <= 1:
+                logger.warning(f"API ratelimit reached, time delay: {self.ratelimit_reset_time} seconds.")
+                time.sleep(self.ratelimit_reset_time + 1)
+                logger.info("Hibernation finished")
 
 class URLManager():
     def __init__(self, api_base_url: str):
@@ -98,10 +106,72 @@ if __name__ == "__main__":
     
     load_dotenv(".env")
     
-    kwargs = {}
-    params: str | None = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-    shards = None
+    wrapper.auth = Authentication(os.environ["CALAMITY_PASSWORD"])
     
-    url = url_manager.generate_shards_url(None, None)
-    url = url.format("nation", "orlys")
-    response = wrapper.fetch_api_data(url)
+    url = url_manager.generate_shards_url("ping", None)
+    url = url.format("nation", "the_hosts_of_calamity")
+    
+    def do_request_in_quick_sucession_test(url):
+        response: dict = wrapper.fetch_api_data(url)
+        return response
+    
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
+    pp(do_request_in_quick_sucession_test(url))
