@@ -21,10 +21,9 @@ class Connection:
         request_object = request.Request(url, None, headers=self.headers)
         response = request.urlopen(request_object)
         
-        self.headers.update({"X-autologin": response.headers.get("X-autologin", ""),
-                            "X-pin": response.headers.get("X-pin", "")})
-        
-        print(self.headers["X-autologin"], self.headers["X-pin"])
+        if self.headers["X-Autologin"] == "":
+            self.headers.update({"X-Autologin": response.headers.get("X-Autologin", "")})
+        print(self.headers["X-Autologin"])
         
         if response.code != 200:
             raise HTTPError(response.code)
@@ -51,5 +50,5 @@ class Nation:
                   "q": shards}
         print(self.connection.urlib_request_url(params))
 
-nation = Nation("testlandia")
-nation.get_data(["name", "fullname", "motto"])
+nation = Nation("The hosts of calamity", None, ".ovApudbiuWZyiVDkKxqXjg")
+nation.get_data(["name", "dossier", "ping", "issues"])
