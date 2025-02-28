@@ -1,4 +1,5 @@
 import time
+from collections.abc import Iterable
 
 def string_is_number(string: str) -> bool:
     """
@@ -34,23 +35,21 @@ def format_key(string: str = None, uppercase: bool = False, replace_empty: str =
         formatted_string = string
     return formatted_string
 
-def join_keys(keys: list | tuple = ['hello', 'world'], separator: str = '+') -> str:
+def join_keys(keys: list[str] | tuple[str] = ['hello', 'world'], separator: str = '+') -> str:
     """
     Joins multiple string keys in a single string.
     """
-    try:
-        result = keys
-        if type(keys) != str:
-            string_keys = (str(key) for key in keys)
-            result = separator.join(string_keys)
-        return result
-    except:
-        raise ValueError(f"{keys} is {type(keys).__name__}, keys must be list or tuple.")
+    result = keys
+    if isinstance(keys, Iterable) and type(keys) is not str:
+        string_keys = (str(key) for key in keys)
+        result = separator.join(string_keys)
+    return str(result)
 
 def generate_epoch_timestamp() -> int:
     timestamp: int = int(time.time())
     return timestamp
 
 if __name__ == "__main__":
-    myList = "awesome", "yep"
-    print(join_keys(myList))
+    myList = 46
+    result = join_keys(myList)
+    print(f"{result} = {type(result)}")

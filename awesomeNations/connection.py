@@ -1,11 +1,13 @@
+import urllib.parse
 from awesomeNations.exceptions import HTTPError
 from awesomeNations.customObjects import AwesomeParser, Authentication
 from awesomeNations.customMethods import join_keys
 import time
 import urllib3
 from urllib import parse
+import urllib
 from pprint import pprint as pp
-from typing import Optional
+from typing import Optional, Literal
 import os
 from dotenv import load_dotenv
 import logging
@@ -87,18 +89,37 @@ class URLManager():
         self.api_base_url = api_base_url
     
     def generate_shards_url(self,
-                     shards: Optional[str | tuple[str]] = None,
-                     params: Optional[str | tuple[str]] = None) -> str:
+                    modifier: Literal["nation", "region", "world", "wa"],
+                    shards: str | tuple[str],
+                    params: Optional[str | tuple[str]] = None) -> str:
         """
         Generates urls for shards, returns the standard API structure if no shards provided.
         """
-        url = self.api_base_url + "?{}={}"
+        querystring: str = None
+        match modifier:
+            case "nation":
+                querystring = "nation={}&q="
+            case "region":
+                querystring = "region={}&q="
+            case "world":
+                querystring = "q="
+            case "wa":
+                querystring = "wa={}&q="
+            case _:
+                raise ValueError(f"{modifier} is invalid. Modifier must be nation, region, world or wa.")
+
+        shards_query: str = shards
+        shards_params: str = params
         if shards:
-            query_shards: str = join_keys(shards) if type(shards) is not str else shards
-            query_params: str = params
-            full_query: str = query_shards + ";" + query_params if query_params else query_shards
-            url += "&q=" + full_query
-        return url.lower()
+            if type(shards) != str:
+                shards_query = join_keys(shards)
+                querystring += shards_query
+        if params:
+            if type(params) != str:
+                shards_params: str = join_keys(params, ";")
+                querystring += ";" +  shards_params
+        full_url: str = self.api_base_url + "?" + querystring
+        return full_url
 
 if __name__ == "__main__":
     wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"})
@@ -108,70 +129,12 @@ if __name__ == "__main__":
     
     wrapper.auth = Authentication(os.environ["CALAMITY_PASSWORD"])
     
-    url = url_manager.generate_shards_url("ping", None)
-    url = url.format("nation", "the_hosts_of_calamity")
+    url = url_manager.generate_shards_url("nation", None)
+    url = url.format("fullworthia")
+    print(url)
     
     def do_request_in_quick_sucession_test(url):
         response: dict = wrapper.fetch_api_data(url)
         return response
     
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
-    pp(do_request_in_quick_sucession_test(url))
+    #pp(do_request_in_quick_sucession_test(url))

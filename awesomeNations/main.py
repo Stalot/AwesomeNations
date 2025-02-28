@@ -9,6 +9,7 @@ from awesomeNations.customObjects import Authentication
 from typing import Optional
 from dotenv import load_dotenv
 import os
+from typing import Literal
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -95,7 +96,7 @@ class AwesomeNations():
         result = f'Around {age-1}-{age} years old.'
         return result
 
-    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: str = "nation", **kwargs) -> None:
+    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region", "cards"] = "nation", **kwargs) -> None:
         """
         Dowloads NationStates daily data dumps.
         
@@ -105,62 +106,56 @@ class AwesomeNations():
         - "region": Dowloads the region data dump.
         - "cards": Dowloads the trading cards data dump, this one needs a `season_number: int`.
         """
-        nation_url = url_manager.data_dumps_url("n")
-        region_url = url_manager.data_dumps_url("r")
-        cards_url = url_manager.data_dumps_url("c")
-        
-        query_parameters = {
-            "downloadformat": "gz"
-            }
+        nation_url = "https://www.nationstates.net/pages/nations.xml.gz"
+        region_url = "https://www.nationstates.net/pages/regions.xml.gz"
+        cards_url = "https://www.nationstates.net/pages/cardlist_S{}.xml.gz"
 
         filepath = Path(filepath).absolute() 
+        if not filepath.suffix:
+            filepath = Path(filepath.as_posix() + ".gz").absolute()
         match type:
-            case "n":
+            case "nation":
                 with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(nation_url, query_parameters=query_parameters, stream=True)
+                    response = wrapper.fetch_html_data(nation_url, stream=True)
                     for chunk in response.iter_content(chunk_size=10 * 1024):
                         file.write(chunk)
-            case "r":
+            case "region":
                 with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(region_url, query_parameters=query_parameters, stream=True)
+                    response = wrapper.fetch_html_data(region_url, stream=True)
                     for chunk in response.iter_content(chunk_size=10 * 1024):
                         file.write(chunk)
-            case "c":
+            case "cards":
                 with open(filepath, 'wb') as file:
-                    cards_url = cards_url.format(season_number=kwargs.get("season_number"))
-                    response = wrapper.fetch_html_data(cards_url, query_parameters=query_parameters, stream=True)
+                    cards_url = cards_url.format(kwargs.get("season_number"))
+                    response = wrapper.fetch_html_data(cards_url, stream=True)
                     for chunk in response.iter_content(chunk_size=10 * 1024):
                         file.write(chunk)
             case _:
                 raise ValueError(type)
 
-    def get_world_shards(self, shards: str | tuple | list = None, **kwargs) -> dict:
+    def get_world_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
         Gets one or more shards from the World API.
         """
-        url = url_manager.shards_url("w").format(query=shards, params="")
-        if shards:
-            shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-            shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-            url = url_manager.shards_url("w")
-            url = url.format(query = shards_query,
-                            params = shard_params,)
-        response = wrapper.fetch_api_data(url)
+        for kwarg in kwargs:
+            kwargs[kwarg] = join_keys(kwargs[kwarg])
+        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+        url: str = url_manager.generate_shards_url("world", shards, params)
+        print(url)
+        response: dict = wrapper.fetch_api_data(url)
         return response
 
-    def get_world_assembly_shards(self, council_id: int, shards: str | tuple | list = None, **kwargs) -> dict:
+    def get_world_assembly_shards(self, council_id: int, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
         Gets one or more shards from the World Assembly API.
         """
-        url = url_manager.shards_url("wa").format(council_id=1, query=shards, params="")
-        if shards:
-            shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-            shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-            url = url_manager.shards_url("wa")
-            url = url.format(council_id = council_id,
-                            query = shards_query,
-                            params = shard_params)
-        response = wrapper.fetch_api_data(url)
+        for kwarg in kwargs:
+            kwargs[kwarg] = join_keys(kwargs[kwarg])
+        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+        url: str = url_manager.generate_shards_url("wa", shards, params)
+        url = url.format(council_id)
+        print(url)
+        response: dict = wrapper.fetch_api_data(url)
         return response
 
     class Nation:
@@ -188,9 +183,9 @@ class AwesomeNations():
                     raise HTTPError(status_code)
 
         # Replacing get_public_shards()
-        def get_shards(self, shards: str | tuple[str] | list[str] = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
-            Gets one or more public shards from the requested nation, returns the standard API by default.
+            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
             ### Standard:
             
@@ -200,11 +195,11 @@ class AwesomeNations():
             If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
             """
             for kwarg in kwargs:
-                if type(kwargs[kwarg]) != str:
-                    kwargs[kwarg] = join_keys(kwargs[kwarg])
-            params: str | None = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url(shards, params)
-            url = url.format("nation", self.nation_name)
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("nation", shards, params)
+            url = url.format(self.nation_name)
+            print(url)
             wrapper.auth = self.nation_authentication
             response: dict = wrapper.fetch_api_data(url)
             return response
@@ -230,9 +225,9 @@ class AwesomeNations():
                 case _:
                     raise HTTPError(status_code)
 
-        def get_shards(self, shards: str | tuple | list = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
-            Gets one or more shards from the requested region, returns the standard API by default.
+            Gets one or more shards from the requested region, returns the standard API if no shards provided.
             
             ### Standard:
             
@@ -242,11 +237,11 @@ class AwesomeNations():
             If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
             """
             for kwarg in kwargs:
-                if type(kwargs[kwarg]) != str:
-                    kwargs[kwarg] = join_keys(kwargs[kwarg])
-            params: str | None = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url(shards, params)
-            url = url.format("region", self.region_name)
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("region", shards, params)
+            url = url.format(self.region_name)
+            print(url)
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -257,5 +252,4 @@ if __name__ == "__main__":
     nation = api.Nation("The Hosts of Calamity", my_nation_auth)
     region = api.Region("Fullworthia")
     
-    data = region.get_shards("census", scale=[67, 87, 32])
-    pp(data)
+    api.get_daily_data_dumps("junk/datadump", "n")
