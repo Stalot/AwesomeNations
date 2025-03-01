@@ -5,10 +5,13 @@
 - Nation authentication for private shards;
 - Library dependencies: beautifulsoup4, requests, lxml and xmltodict -> urllib3 and xmltodict.
 
-Deprecated:
-- **Nation**: get_public_shards() is deprecated, use get_shards() instead.
+### Deprecated:
+- **Nation**: `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
-Bug fixes:
+### Removed:
+- **Nation**: `get_summary()`.
+
+### Bug fixes:
 - Problem while post processing complex numbers in XML response.
 
 ## </> 1.0.0 </>:
@@ -16,26 +19,26 @@ Bug fixes:
 - Internal structure adapted from major **web scrapping** to **API wrapping**, this change was made to improve **efficiency** and better align with NationStates script rules;
 - Documentation improved.
 
-New methods:
-- **AwesomeNations**: get_daily_data_dumps()-> None;
-- **AwesomeNations**: get_world_shards()-> dict;
-- **AwesomeNations**: get_world_assembly_shards() -> dict;
-- **Nation**: get_summary() -> dict;
-- **Nation**: get_public_shards() -> dict;
-- **Region**: get_shards() -> dict.
+### New methods:
+- **AwesomeNations**: `get_daily_data_dumps()`;
+- **AwesomeNations**: `get_world_shards()`;
+- **AwesomeNations**: `get_world_assembly_shards()`;
+- **Nation**: `get_summary()`;
+- **Nation**: `get_public_shards()`;
+- **Region**: `get_shards()`.
 
-Modified methods:
-- **AwesomeNations**: "nationStates_birthday()" was renamed to "today_is_nationstates_birthday()";
-- **AwesomeNations**: "nationStates_age()" was renamed to "get_nationstates_age()".
+### Modified methods:
+- **AwesomeNations**: `nationStates_birthday()` was renamed to `today_is_nationstates_birthday()`;
+- **AwesomeNations**: `nationStates_age()` was renamed to `get_nationstates_age()`.
 
-Removed methods:
-- **Nation**: get_overview();
-- **Nation**: get_activity();
-- **Nation**: get_census();
-- **Region**: get_overview();
-- **Region**: get_world_census();
-- **Region**: get_activity();
-- **Region**: get_embassies().
+### Removed methods:
+- **Nation**: `get_overview()`;
+- **Nation**: `get_activity()`;
+- **Nation**: `get_census()`;
+- **Region**: `get_overview()`;
+- **Region**: `get_world_census()`;
+- **Region**: `get_activity()`;
+- **Region**: `get_embassies()`.
 
 ## </> 0.1.0 </>:
 

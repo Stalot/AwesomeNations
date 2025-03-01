@@ -58,7 +58,7 @@ class AwesomeNations():
     """
 
     def __init__(self,
-                 user_agent: str = None,
+                 user_agent: str,
                  request_timeout: int = 15,
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
@@ -160,6 +160,33 @@ class AwesomeNations():
                 case _:
                     raise HTTPError(status_code)
 
+        # DEPRECATED METHOD
+        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+            """
+            # THIS METHOD IS DEPRECATED
+            ## Use ```get_shards()``` instead!
+            
+            ***
+            
+            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
+            
+            ### Standard:
+            
+            A compendium of the most commonly sought information.
+            
+            ### Shards:
+            If you don't need most of this data, please use shards instead. Shards allow you to request
+            exactly what you want and can be used to request data not available from the Standard API!
+            """
+            for kwarg in kwargs:
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("nation", shards, params)
+            url = url.format(self.nation_name)
+            wrapper.auth = Authentication(None, None)
+            response: dict = wrapper.fetch_api_data(url)
+            return response
+
         # Replacing get_public_shards()
         def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
@@ -224,8 +251,11 @@ class AwesomeNations():
 if __name__ == "__main__":
     load_dotenv(".env")
     api = AwesomeNations("AwesomeNations/Test")
-    nation = api.Nation("Orlys")
+    nation = api.Nation("TestLandia")
     region = api.Region("Fullworthia")
     
     pp(api.get_world_assembly_shards(0, "delegates"))
     pp(api.get_world_shards("censusname", scale=46))
+    
+    pp(nation.get_public_shards())
+    pp(region.get_shards())
