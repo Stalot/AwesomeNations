@@ -1,5 +1,5 @@
-import time
 from collections.abc import Iterable
+import time
 
 def string_is_number(string: str) -> bool:
     """

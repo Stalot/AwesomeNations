@@ -1,16 +1,14 @@
-import urllib.parse
-from awesomeNations.exceptions import HTTPError
 from awesomeNations.customObjects import AwesomeParser, Authentication
 from awesomeNations.customMethods import join_keys
-import time
-import urllib3
-from urllib import parse
-import urllib
-from pprint import pprint as pp
+from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
-import os
 from dotenv import load_dotenv
+from pathlib import Path
+import urllib3
 import logging
+import urllib
+import time
+import os
 
 logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
@@ -20,14 +18,12 @@ parser = AwesomeParser()
 class WrapperConnection():
     def __init__(self,
                  headers: dict = None,
-                 session: bool = False,
                  request_timeout: int | tuple = 10,
                  ratelimit_sleep = True,
                  ratelimit_reset_time = 30,
                  api_version = 12,
                  ):
         self.headers = headers
-        self.session = session
         self.request_timeout = request_timeout
         self.ratelimit_sleep = ratelimit_sleep
         self.ratelimit_reset_time = ratelimit_reset_time
@@ -35,19 +31,23 @@ class WrapperConnection():
         self.ratelimit_requests_seen: int = None
         self.api_version = api_version
         
+        self.pool_manager = urllib3.PoolManager(4, self.headers)
+        
         self.request_headers: dict = {}
         self.auth: Optional[Authentication] = None
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
-                       query_parameters: None = None,
-                       stream: bool = False) -> dict:
+                       query_parameters: Optional[dict] = None) -> dict:
+        """
+        This fetches API data and automatically parses it: (xml response -> python dictionary)
+        """
         url += f"&v={self.api_version}"
         
         if self.auth:
             self.headers.update(self.auth.get())
-        
-        response = urllib3.request("GET", url, headers=self.headers, timeout=self.request_timeout)
+
+        response = self.pool_manager.request("GET", url, headers=self.headers, fields=query_parameters, timeout=self.request_timeout)
 
         if response.status != 200:
             raise HTTPError(response.status)
@@ -62,8 +62,18 @@ class WrapperConnection():
         parsed_response = parser.parse_xml(response.data.decode())
         return parsed_response
 
+    def fetch_file(self,
+                   url: str,
+                   filepath: str | Path) -> None:
+        "Dowloads a file"
+        if not Path(filepath).suffix:
+            raise ValueError(f"{filepath}: This path needs a suffix dude!")
+        with self.pool_manager.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
+            for chunk in file_response.stream(10**4, True):
+                file_out.write(chunk)
+
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
-        response = urllib3.request("GET", url, headers=self.headers, timeout=20)
+        response = self.pool_manager.request("GET", url, headers=self.headers, timeout=20)
         
         self.request_headers.update(response.headers)
 
@@ -72,20 +82,19 @@ class WrapperConnection():
         self.api_ratelimit()
 
         return response.status
-
+   
     def api_ratelimit(self) -> None:
         """
         Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
         if self.ratelimit_remaining:
             if self.ratelimit_remaining <= 1:
-                logger.warning(f"API ratelimit reached, time delay: {self.ratelimit_reset_time} seconds.")
+                logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
                 time.sleep(self.ratelimit_reset_time + 1)
                 logger.info("Hibernation finished")
 
 class URLManager():
     def __init__(self, api_base_url: str):
-        #self.api_base_url: str = "https://www.nationstates.net/cgi-bin/api.cgi"
         self.api_base_url = api_base_url
     
     def generate_shards_url(self,
@@ -113,28 +122,28 @@ class URLManager():
         if shards:
             if type(shards) != str:
                 shards_query = join_keys(shards)
-                querystring += shards_query
+            querystring += shards_query
         if params:
             if type(params) != str:
                 shards_params: str = join_keys(params, ";")
-                querystring += ";" +  shards_params
+            querystring += ";" +  shards_params
         full_url: str = self.api_base_url + "?" + querystring
         return full_url
 
 if __name__ == "__main__":
-    wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"})
+    wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}, session=False)
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
     load_dotenv(".env")
     
     wrapper.auth = Authentication(os.environ["CALAMITY_PASSWORD"])
     
-    url = url_manager.generate_shards_url("nation", None)
-    url = url.format("fullworthia")
+    url = url_manager.generate_shards_url("nation", "ping")
+    url = url.format("the_hosts_of_calamity")
     print(url)
     
     def do_request_in_quick_sucession_test(url):
         response: dict = wrapper.fetch_api_data(url)
         return response
     
-    #pp(do_request_in_quick_sucession_test(url))
+    do_request_in_quick_sucession_test(url)

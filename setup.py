@@ -10,7 +10,7 @@ def long_description() -> str:
 
 setup(
     name='awesomeNations',
-    version='1.0.1',
+    version='2.0.0',
     description='A simple and cozy wrapper for NationStates',
     long_description=long_description(),
     long_description_content_type='text/markdown',
@@ -19,4 +19,4 @@ setup(
     license='MIT License',
     keywords=['NationStates', 'API wrapper', 'NationStates wrapper'],
     packages=find_packages(),
-    install_requires=["beautifulsoup4==4.12.3", "requests==2.32.3", "lxml==5.3.0", "xmltodict==0.14.2"])
+    install_requires=["urllib3==2.3.0", "xmltodict==0.14.2"])

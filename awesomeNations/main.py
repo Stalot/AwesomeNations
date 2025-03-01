@@ -1,15 +1,13 @@
 from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customMethods import join_keys, format_key
-from datetime import datetime
-from bs4 import BeautifulSoup as bs
-from pathlib import Path
+from awesomeNations.customObjects import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
-from awesomeNations.customObjects import Authentication
-from typing import Optional
 from dotenv import load_dotenv
-import os
+from datetime import datetime
+from typing import Optional
 from typing import Literal
+from pathlib import Path
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -61,7 +59,6 @@ class AwesomeNations():
 
     def __init__(self,
                  user_agent: str = None,
-                 session: bool = False,
                  request_timeout: int = 15,
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
@@ -73,7 +70,6 @@ class AwesomeNations():
         }
         
         wrapper.headers = headers
-        wrapper.session = session
         wrapper.request_timeout = request_timeout
         wrapper.ratelimit_sleep = ratelimit_sleep
         wrapper.ratelimit_reset_time = ratelimit_reset_time
@@ -96,7 +92,7 @@ class AwesomeNations():
         result = f'Around {age-1}-{age} years old.'
         return result
 
-    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region", "cards"] = "nation", **kwargs) -> None:
+    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region"] = "nation") -> None:
         """
         Dowloads NationStates daily data dumps.
         
@@ -104,32 +100,15 @@ class AwesomeNations():
         
         - "nation": Dowloads the nation data dump.
         - "region": Dowloads the region data dump.
-        - "cards": Dowloads the trading cards data dump, this one needs a `season_number: int`.
         """
-        nation_url = "https://www.nationstates.net/pages/nations.xml.gz"
-        region_url = "https://www.nationstates.net/pages/regions.xml.gz"
-        cards_url = "https://www.nationstates.net/pages/cardlist_S{}.xml.gz"
+        nation_url: str = "https://www.nationstates.net/pages/nations.xml.gz"
+        region_url: str = "https://www.nationstates.net/pages/regions.xml.gz"
 
-        filepath = Path(filepath).absolute() 
-        if not filepath.suffix:
-            filepath = Path(filepath.as_posix() + ".gz").absolute()
         match type:
             case "nation":
-                with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(nation_url, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
+                wrapper.fetch_file(nation_url, filepath)
             case "region":
-                with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(region_url, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
-            case "cards":
-                with open(filepath, 'wb') as file:
-                    cards_url = cards_url.format(kwargs.get("season_number"))
-                    response = wrapper.fetch_html_data(cards_url, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
+                wrapper.fetch_file(region_url, filepath)
             case _:
                 raise ValueError(type)
 
@@ -154,7 +133,6 @@ class AwesomeNations():
         params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
         url: str = url_manager.generate_shards_url("wa", shards, params)
         url = url.format(council_id)
-        print(url)
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -199,7 +177,6 @@ class AwesomeNations():
             params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
             url: str = url_manager.generate_shards_url("nation", shards, params)
             url = url.format(self.nation_name)
-            print(url)
             wrapper.auth = self.nation_authentication
             response: dict = wrapper.fetch_api_data(url)
             return response
@@ -241,15 +218,14 @@ class AwesomeNations():
             params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
             url: str = url_manager.generate_shards_url("region", shards, params)
             url = url.format(self.region_name)
-            print(url)
             response: dict = wrapper.fetch_api_data(url)
             return response
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    api = AwesomeNations("AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)")
-    my_nation_auth = Authentication(os.environ["CALAMITY_PASSWORD"])
-    nation = api.Nation("The Hosts of Calamity", my_nation_auth)
+    api = AwesomeNations("AwesomeNations/Test")
+    nation = api.Nation("Orlys")
     region = api.Region("Fullworthia")
     
-    api.get_daily_data_dumps("junk/datadump", "n")
+    pp(api.get_world_assembly_shards(0, "delegates"))
+    pp(api.get_world_shards("censusname", scale=46))

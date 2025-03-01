@@ -53,7 +53,6 @@ def status_code_context(status_code: int = None) -> str | None:
 
 class HTTPError(Exception):
     def __init__(self, status_code) -> None:
-        
         self.status_code_context: str | None = status_code_context(status_code)
         if not self.status_code_context:
             self.status_code_context = ""
