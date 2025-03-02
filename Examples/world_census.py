@@ -7,7 +7,7 @@ from awesomeNations import AwesomeNations
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-awesomeAPI = AwesomeNations("My ultra omega super blaster cool application")
+awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
 
 def main():
     try:

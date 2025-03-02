@@ -7,7 +7,7 @@ from awesomeNations import AwesomeNations
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-awesomeAPI = AwesomeNations("My Awesome Application")
+awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
 region = awesomeAPI.Region('The Pacific')
 
 def pretty_name(name: str) -> str:
