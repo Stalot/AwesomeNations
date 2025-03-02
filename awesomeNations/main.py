@@ -120,7 +120,6 @@ class AwesomeNations():
             kwargs[kwarg] = join_keys(kwargs[kwarg])
         params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
         url: str = url_manager.generate_shards_url("world", shards, params)
-        print(url)
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -150,7 +149,10 @@ class AwesomeNations():
             """
             Checks if nation exists.
             """
-            url = url_manager.generate_shards_url().format("nation", self.nation_name)
+            url = url_manager.generate_shards_url("nation",
+                                                  None,
+                                                  None,
+                                                  nation_name=self.nation_name)
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:
@@ -181,9 +183,11 @@ class AwesomeNations():
             for kwarg in kwargs:
                 kwargs[kwarg] = join_keys(kwargs[kwarg])
             params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("nation", shards, params)
-            url = url.format(self.nation_name)
-            wrapper.auth = Authentication(None, None)
+            url: str = url_manager.generate_shards_url("nation",
+                                                       shards,
+                                                       params,
+                                                       nation_name=self.nation_name)
+            wrapper.auth = self.nation_authentication
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -202,8 +206,10 @@ class AwesomeNations():
             for kwarg in kwargs:
                 kwargs[kwarg] = join_keys(kwargs[kwarg])
             params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("nation", shards, params)
-            url = url.format(self.nation_name)
+            url: str = url_manager.generate_shards_url("nation",
+                                                       shards,
+                                                       params,
+                                                       nation_name=self.nation_name)
             wrapper.auth = self.nation_authentication
             response: dict = wrapper.fetch_api_data(url)
             return response
@@ -243,8 +249,10 @@ class AwesomeNations():
             for kwarg in kwargs:
                 kwargs[kwarg] = join_keys(kwargs[kwarg])
             params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("region", shards, params)
-            url = url.format(self.region_name)
+            url: str = url_manager.generate_shards_url("region",
+                                                       shards,
+                                                       params,
+                                                       region_name=self.region_name)
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -254,8 +262,10 @@ if __name__ == "__main__":
     nation = api.Nation("TestLandia")
     region = api.Region("Fullworthia")
     
-    pp(api.get_world_assembly_shards(0, "delegates"))
-    pp(api.get_world_shards("censusname", scale=46))
+    print(nation.exists())
+    
+    pp(api.today_is_nationstates_birthday())
+    pp(api.get_nationstates_age())
     
     pp(nation.get_public_shards())
     pp(region.get_shards())

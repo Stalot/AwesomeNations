@@ -42,7 +42,7 @@ class WrapperConnection():
         """
         This fetches API data and automatically parses it: (xml response -> python dictionary)
         """
-        url += f"&v={self.api_version}"
+        url = url.format(v=self.api_version)
         
         if self.auth:
             self.headers.update(self.auth.get())
@@ -99,21 +99,30 @@ class URLManager():
     
     def generate_shards_url(self,
                     modifier: Literal["nation", "region", "world", "wa"],
-                    shards: str | tuple[str],
-                    params: Optional[str | tuple[str]] = None) -> str:
+                    shards: Optional[str | tuple[str]] = None,
+                    params: Optional[str | tuple[str]] = None,
+                    **kwargs) -> str:
         """
-        Generates urls for shards, returns the standard API structure if no shards provided.
+        Generates urls for shards, returns the standard API structure if no shards provided (if supported).
         """
         querystring: str = None
         match modifier:
             case "nation":
-                querystring = "nation={}&q="
+                querystring = f"nation={kwargs["nation_name"]}&q="
+                if not shards:
+                    querystring = querystring.replace("&q=", "")
             case "region":
-                querystring = "region={}&q="
+                querystring = f"region={kwargs["region_name"]}&q="
+                if not shards:
+                    querystring = querystring.replace("&q=", "")
             case "world":
                 querystring = "q="
+                if not shards:
+                    raise ValueError(f"Shards cannot be None, World API modifier needs shards!")
             case "wa":
-                querystring = "wa={}&q="
+                querystring = f"wa={kwargs["council_id"]}&q="
+                if not shards:
+                    raise ValueError(f"Shards cannot be None, World Assembly API modifier needs shards!")
             case _:
                 raise ValueError(f"{modifier} is invalid. Modifier must be nation, region, world or wa.")
 
@@ -127,23 +136,26 @@ class URLManager():
             if type(params) != str:
                 shards_params: str = join_keys(params, ";")
             querystring += ";" +  shards_params
-        full_url: str = self.api_base_url + "?" + querystring
+        full_url: str = self.api_base_url + "?" + querystring + "&v={v}"
         return full_url
 
 if __name__ == "__main__":
-    wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}, session=False)
+    wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"})
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
     load_dotenv(".env")
     
     wrapper.auth = Authentication(os.environ["CALAMITY_PASSWORD"])
     
-    url = url_manager.generate_shards_url("nation", "ping")
-    url = url.format("the_hosts_of_calamity")
+    url = url_manager.generate_shards_url("nation",
+                                          ("fullname", "religion", "flag", "leader"),
+                                          None,
+                                          nation_name="Orlys",
+                                          api_version=12)
     print(url)
     
     def do_request_in_quick_sucession_test(url):
         response: dict = wrapper.fetch_api_data(url)
         return response
     
-    do_request_in_quick_sucession_test(url)
+    #do_request_in_quick_sucession_test(url)
