@@ -30,7 +30,7 @@ Easy, quick and **awesome**.
 ## Regions 🌍
 ...
 
-## Summary
+## Summary 📚
 
 **AwesomeNations**
 ...

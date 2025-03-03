@@ -6,6 +6,7 @@ from pprint import pprint as pp
 from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional
+from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
 
@@ -59,7 +60,7 @@ class AwesomeNations():
 
     def __init__(self,
                  user_agent: str,
-                 request_timeout: int = 15,
+                 request_timeout: int | tuple = (15, 10),
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
                  api_version: int = 12):
@@ -70,7 +71,7 @@ class AwesomeNations():
         }
         
         wrapper.headers = headers
-        wrapper.request_timeout = request_timeout
+        wrapper.request_timeout = Timeout(connect=request_timeout[0], read=request_timeout[1]) if type(request_timeout) is tuple else int(request_timeout)
         wrapper.ratelimit_sleep = ratelimit_sleep
         wrapper.ratelimit_reset_time = ratelimit_reset_time
         wrapper.api_version = api_version
@@ -258,7 +259,7 @@ class AwesomeNations():
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    api = AwesomeNations("AwesomeNations/Test")
+    api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
     nation = api.Nation("TestLandia")
     region = api.Region("Fullworthia")
     

@@ -2,6 +2,7 @@ from awesomeNations.customObjects import AwesomeParser, Authentication
 from awesomeNations.customMethods import join_keys
 from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
+from pprint import pprint as pp
 from dotenv import load_dotenv
 from pathlib import Path
 import urllib3
@@ -18,18 +19,17 @@ parser = AwesomeParser()
 class WrapperConnection():
     def __init__(self,
                  headers: dict = None,
-                 request_timeout: int | tuple = 10,
                  ratelimit_sleep = True,
                  ratelimit_reset_time = 30,
                  api_version = 12,
                  ):
-        self.headers = headers
-        self.request_timeout = request_timeout
-        self.ratelimit_sleep = ratelimit_sleep
-        self.ratelimit_reset_time = ratelimit_reset_time
+        self.headers: dict = headers
+        self.request_timeout: int | tuple = 10
+        self.ratelimit_sleep: int = ratelimit_sleep
+        self.ratelimit_reset_time: int = ratelimit_reset_time
         self.ratelimit_remaining: int = None
         self.ratelimit_requests_seen: int = None
-        self.api_version = api_version
+        self.api_version: int = api_version
         
         self.pool_manager = urllib3.PoolManager(4, self.headers)
         
@@ -140,7 +140,8 @@ class URLManager():
         return full_url
 
 if __name__ == "__main__":
-    wrapper = WrapperConnection({"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"})
+    headers = {"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}
+    wrapper = WrapperConnection(headers, request_timeout=8)
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
     load_dotenv(".env")
@@ -152,10 +153,12 @@ if __name__ == "__main__":
                                           None,
                                           nation_name="Orlys",
                                           api_version=12)
+    
     print(url)
+    print(wrapper.request_timeout)
     
     def do_request_in_quick_sucession_test(url):
         response: dict = wrapper.fetch_api_data(url)
         return response
     
-    #do_request_in_quick_sucession_test(url)
+    pp(do_request_in_quick_sucession_test(url))

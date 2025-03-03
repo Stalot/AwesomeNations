@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import Any, Optional
 import time
 
 def string_is_number(string: str) -> bool:
@@ -49,7 +50,21 @@ def generate_epoch_timestamp() -> int:
     timestamp: int = int(time.time())
     return timestamp
 
+def get_index(object: tuple | list, index: int, default: Optional[Any] = None) -> Any | None:
+    """
+    Safely retrieves an element from a tuple or list by index.
+
+    - **object** (tuple | list): The tuple or list from which to retrieve the element.
+    - **index** (int): The index of the element to retrieve.
+    - **default** (Any, optional): The value to return if the index is out of range. Defaults to None.
+
+    **Returns**: The element at the specified index, or the default value if the index is out of range.
+    """
+    try:
+        return object[index]
+    except IndexError:
+        return default
+
 if __name__ == "__main__":
-    myList = 46
-    result = join_keys(myList)
-    print(f"{result} = {type(result)}")
+    my_tuple = ("A", "B", "C", "D", "E")
+    print(get_index(my_tuple, 8))
