@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="https://i.imgur.com/apn9Y52.png" #gh-light-mode-only/>
-  <img src="https://i.imgur.com/6brBjtZ.png" #gh-dark-mode-only/>
+  <img src="https://i.imgur.com/apn9Y52.png"/>
 </p>
 
 ## </> 2.0.0 </>:
