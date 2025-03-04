@@ -260,11 +260,19 @@ class AwesomeNations():
 if __name__ == "__main__":
     load_dotenv(".env")
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    nation = api.Nation("The Hosts of Calamity", Authentication(os.environ["CALAMITY_PASSWORD"]))
+    nation = api.Nation("ORLYS")
     region = api.Region("Fullworthia")
     
+    print("My super blast cool app started!")
+    
     if nation.exists():
-        pp(nation.get_shards())
+        print(nation.nation_name, "exists.")
+        pp(nation.get_shards(("name", "fullname", "leader", "religion")))
+    else:
+        print(nation.nation_name, "doesn't exist.")
     
     if region.exists():
+        print(region.region_name, "exists.")
         pp(region.get_shards())
+    else:
+        print(region.region_name, "doesn't exist.")

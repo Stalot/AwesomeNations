@@ -1,3 +1,4 @@
+import urllib3.util
 from awesomeNations.customObjects import AwesomeParser, Authentication
 from awesomeNations.customMethods import join_keys
 from awesomeNations.exceptions import HTTPError
@@ -30,8 +31,16 @@ class WrapperConnection():
         self.ratelimit_remaining: int = None
         self.api_version: int = api_version
         
-        self.pool_manager = urllib3.PoolManager(4, self.headers)
-        
+        retry_settings = urllib3.util.Retry(total=4,
+                                            connect=3,
+                                            read=3,
+                                            backoff_factor=1,
+                                            status_forcelist=[500, 502, 503, 504],
+                                            raise_on_status=False,
+                                            raise_on_redirect=False)
+        self.pool_manager = urllib3.PoolManager(4,
+                                                self.headers,
+                                                retries=retry_settings)
         self.last_request_headers: dict = {}
         self.auth: Optional[Authentication] = None
 
@@ -147,7 +156,7 @@ class URLManager():
 
 if __name__ == "__main__":
     headers = {"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}
-    wrapper = WrapperConnection(headers, request_timeout=8)
+    wrapper = WrapperConnection(headers)
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
     load_dotenv(".env")
