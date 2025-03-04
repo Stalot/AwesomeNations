@@ -28,7 +28,6 @@ class WrapperConnection():
         self.ratelimit_sleep: int = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
         self.ratelimit_remaining: int = None
-        self.ratelimit_requests_seen: int = None
         self.api_version: int = api_version
         
         self.pool_manager = urllib3.PoolManager(4, self.headers)
@@ -44,6 +43,8 @@ class WrapperConnection():
         """
         url = url.format(v=self.api_version)
         
+        # Updates headers X-Password, X-Autologin and X-Pin in the next request
+        # for actions that need authentication (Like private shards).
         if self.auth:
             self.headers.update(self.auth.get())
 
@@ -54,8 +55,8 @@ class WrapperConnection():
         
         self.last_request_headers.update(response.headers)
         x_pin_header: int | None = response.headers.get("X-Pin")
-        self.headers["X-Pin"] = x_pin_header if x_pin_header else ""
         
+        # Updates self.auth X-Pin if necessary (for quick sucessive requests):
         if self.auth and x_pin_header:
             if self.auth.xpin != x_pin_header:
                 self.auth.xpin = x_pin_header

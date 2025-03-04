@@ -16,47 +16,43 @@ url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
 
 class AwesomeNations():
     """
-    # AwesomeNations
+    # 🚩 AwesomeNations 🚩
 
     Welcome! I'm the main class of this library and can't wait to collaborate with you! Feel free to explore my [GitHub repository](https://github.com/Stalot/AwesomeNations) and report any issues [here](https://github.com/Stalot/AwesomeNations/issues).
 
-    ## 📚 Useful References
+    # 📚 Useful References 📚
 
     Here are some helpful links for coding guidelines and references. Please note that these resources may change over time:
 
     - 📖 [NationStates API Documentation](https://www.nationstates.net/pages/api.html)  
     - ⚖️ [NationStates Script Rules for HTML site](https://forum.nationstates.net/viewtopic.php?p=16394966#p16394966)
     
-    ## ⚙️ Class Arguments
+    ---
     
-    ### user_agent: str
+    ## user_agent: str
     
     Sets a User-Agent. Whenever possible, your tool should identify itself by setting the User-Agent header with relevant data.
     - `<application name>/<version> <comments>`
     - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
     
-    ### session: bool
-    
-    Allow requesting using session, improving efficiency by maintaining persistent connections.
-    
-    ### request_timeout: int | tuple
+    ## request_timeout: int | tuple
 
     Defines a timeout (in seconds) for requests.
 
     - `request_timeout: tuple = (10, 5)` -> 10 seconds for connecting, 5 seconds for reading.
     - `request_timeout: int = 10` -> 10 seconds for both.
     
-    ### ratelimit_sleep: bool
+    ## ratelimit_sleep: bool
     
     This allows to automatically "sleep" if the API ratelimit is reached, prevents temporary lockouts due to excessive requests in a short span of time.
 
-    ### ratelimit_reset_time: int
+    ## ratelimit_reset_time: int
     
     Defines the reset time (in seconds) to wait when the API ratelimit is reached.
     
-    ### api_version: int
+    ## api_version: int
     
-    This setting allows you to specify the NationStates API version your script expects. Since the API may update over time, adding new data or changing its format, older scripts might break if they encounter unexpected changes. By requesting a specific version number, your script can ensure it receives data in a format it understands, preventing compatibility issues.
+    This setting allows you to specify the NationStates API version your script uses.
     """
 
     def __init__(self,
@@ -227,7 +223,10 @@ class AwesomeNations():
             """
             Checks if region exists.
             """
-            url = url_manager.generate_shards_url().format("region", self.region_name)
+            url = url_manager.generate_shards_url("region",
+                                                  None,
+                                                  None,
+                                                  region_name=self.region_name)
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:
@@ -264,7 +263,8 @@ if __name__ == "__main__":
     nation = api.Nation("The Hosts of Calamity", Authentication(os.environ["CALAMITY_PASSWORD"]))
     region = api.Region("Fullworthia")
     
-    print(nation.exists())
+    if nation.exists():
+        pp(nation.get_shards())
     
-    while True:
-        pp(nation.get_shards("ping"))
+    if region.exists():
+        pp(region.get_shards())
