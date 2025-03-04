@@ -5,7 +5,10 @@
 ## </> 2.0.0 </>:
 
 - Nation authentication for private shards;
-- Data structure
+- URL generation improved.
+
+### Bug fixes:
+- Problem while post processing complex numbers in XML response.
 
 ### Current Dependencies:
 
@@ -24,9 +27,6 @@ There are some dependency changes in version 2.0.0, here are the current depende
 
 ### Removed:
 - **Nation**: `get_summary()`.
-
-### Bug fixes:
-- Problem while post processing complex numbers in XML response.
 
 ## </> 1.0.0 </>:
 

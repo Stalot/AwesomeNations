@@ -42,6 +42,7 @@ def status_code_context(status_code: int = None) -> str | None:
         403: "Forbidden",
         404: "Not Found",
         408: "Request Timeout",
+        409: "Conflict",
         500: "Internal Server Error",
         502: "Bad Gateway",
         503: "Service Unavailable",
@@ -63,4 +64,4 @@ class HTTPError(Exception):
         super().__init__(f'{self.message}\nJokes aside... {motivational_quotes().capitalize()}')
 
 if __name__ == "__main__":
-    raise HTTPError(404)
+    raise HTTPError(409)

@@ -145,6 +145,7 @@ class AwesomeNations():
                      auth: Optional[Authentication] = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20')
             self.nation_authentication: Authentication = auth
+            wrapper.auth = self.nation_authentication
 
         def exists(self) -> bool:
             """
@@ -211,7 +212,6 @@ class AwesomeNations():
                                                        shards,
                                                        params,
                                                        nation_name=self.nation_name)
-            wrapper.auth = self.nation_authentication
             response: dict = wrapper.fetch_api_data(url)
             return response
 
