@@ -133,6 +133,11 @@ class AwesomeNations():
         response: dict = wrapper.fetch_api_data(url)
         return response
 
+    def get_api_latest_version(self) -> int:
+        url = "https://www.nationstates.net/cgi-bin/api.cgi?a=version"
+        latest_version: int = int(wrapper.fetch_raw_data(url))
+        return latest_version
+
     class Nation:
         """
         Class dedicated to NationStates nation API.
@@ -264,6 +269,8 @@ if __name__ == "__main__":
     region = api.Region("Fullworthia")
     
     print("My super blast cool app started!")
+    
+    print("Current API version:", api.get_api_latest_version())
     
     if nation.exists():
         print(nation.nation_name, "exists.")

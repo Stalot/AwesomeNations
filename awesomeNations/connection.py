@@ -77,6 +77,15 @@ class WrapperConnection():
         parsed_response = parser.parse_xml(response.data.decode())
         return parsed_response
 
+    def fetch_raw_data(self,
+                       url: str) -> str:
+        response = self.pool_manager.request("GET", url)
+        
+        if response.status != 200:
+            raise HTTPError(response.status)
+        
+        return response.data.decode().strip()
+
     def fetch_file(self,
                    url: str,
                    filepath: str | Path) -> None:
@@ -159,21 +168,6 @@ if __name__ == "__main__":
     wrapper = WrapperConnection(headers)
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
-    load_dotenv(".env")
     
-    wrapper.auth = Authentication(os.environ["CALAMITY_PASSWORD"])
-    
-    url = url_manager.generate_shards_url("nation",
-                                          ("fullname", "religion", "flag", "leader"),
-                                          None,
-                                          nation_name="Orlys",
-                                          api_version=12)
-    
-    print(url)
-    print(wrapper.request_timeout)
-    
-    def do_request_in_quick_sucession_test(url):
-        response: dict = wrapper.fetch_api_data(url)
-        return response
-    
-    pp(do_request_in_quick_sucession_test(url))
+    data = wrapper.fetch_raw_data("https://www.nationstates.net/cgi-bin/api.cgi?a=version")
+    pp(data)
