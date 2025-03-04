@@ -33,7 +33,7 @@ class WrapperConnection():
         
         self.pool_manager = urllib3.PoolManager(4, self.headers)
         
-        self.request_headers: dict = {}
+        self.last_request_headers: dict = {}
         self.auth: Optional[Authentication] = None
 
     def fetch_api_data(self,
@@ -52,10 +52,15 @@ class WrapperConnection():
         if response.status != 200:
             raise HTTPError(response.status)
         
-        self.request_headers.update(response.headers)
-        self.headers.update({"X-Pin": response.headers["X-Pin"]}) if response.headers.get("X-Pin") else ...
+        self.last_request_headers.update(response.headers)
+        x_pin_header: int | None = response.headers.get("X-Pin")
+        self.headers["X-Pin"] = x_pin_header if x_pin_header else ""
         
-        ratelimit_remaining: str | None = self.request_headers.get("Ratelimit-remaining")
+        if self.auth and x_pin_header:
+            if self.auth.xpin != x_pin_header:
+                self.auth.xpin = x_pin_header
+        
+        ratelimit_remaining: str | None = response.headers.get("Ratelimit-remaining")
         self.ratelimit_remaining = int(ratelimit_remaining) if ratelimit_remaining else None
         self.api_ratelimit()
 
@@ -75,9 +80,9 @@ class WrapperConnection():
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
         response = self.pool_manager.request("GET", url, headers=self.headers, timeout=20)
         
-        self.request_headers.update(response.headers)
+        self.last_request_headers.update(response.headers)
 
-        ratelimit_remaining: str | None = self.request_headers.get("Ratelimit-remaining")
+        ratelimit_remaining: str | None = response.headers.get("Ratelimit-remaining")
         self.ratelimit_remaining = int(ratelimit_remaining) if ratelimit_remaining else None
         self.api_ratelimit()
 

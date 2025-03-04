@@ -9,6 +9,7 @@ from typing import Optional
 from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
+import os
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -260,13 +261,10 @@ class AwesomeNations():
 if __name__ == "__main__":
     load_dotenv(".env")
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    nation = api.Nation("TestLandia")
+    nation = api.Nation("The Hosts of Calamity", Authentication(os.environ["CALAMITY_PASSWORD"]))
     region = api.Region("Fullworthia")
     
     print(nation.exists())
     
-    pp(api.today_is_nationstates_birthday())
-    pp(api.get_nationstates_age())
-    
-    pp(nation.get_public_shards())
-    pp(region.get_shards())
+    while True:
+        pp(nation.get_shards("ping"))
