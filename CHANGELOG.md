@@ -5,27 +5,18 @@
 ## </> 2.0.0 </>:
 
 - Nation authentication for private shards;
-- URL generation improved.
+- **AwesomeNations** `get_daily_data_dumps()` now just accepts nation or region daily data dumps.
 
 ### Bug fixes:
 - Problem while post processing complex numbers in XML response.
 
-### Current Dependencies:
-
-There are some dependency changes in version 2.0.0, here are the current dependencies you need to worry about when using AwesomeNations!
-
-| Library                | Dependency         |
-| -----------------------| ------------------ |
-|  beautifulsoup4        | :x:                |
-|  requests              | :x:                |
-|  lxml                  | :x:                |
-|  urllib3               | :white_check_mark: |
-|  xmltodict             | :white_check_mark: |
-
-### Deprecated:
+### Deprecated methods:
 - **Nation**: `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
-### Removed:
+### Added methods:
+- **AwesomeNations**: `get_api_latest_version()`.
+
+### Removed methods:
 - **Nation**: `get_summary()`.
 
 ## </> 1.0.0 </>:
