@@ -11,13 +11,13 @@
 - Problem while post processing complex numbers in XML response.
 
 ### Deprecated methods:
-- **Nation**: `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
+- **Nation** `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
-### Added methods:
-- **AwesomeNations**: `get_api_latest_version()`.
+### New methods:
+- **AwesomeNations** `get_api_latest_version()`.
 
 ### Removed methods:
-- **Nation**: `get_summary()`.
+- **Nation** `get_summary()`.
 
 ## </> 1.0.0 </>:
 
@@ -25,25 +25,25 @@
 - Documentation improved.
 
 ### New methods:
-- **AwesomeNations**: `get_daily_data_dumps()`;
-- **AwesomeNations**: `get_world_shards()`;
-- **AwesomeNations**: `get_world_assembly_shards()`;
-- **Nation**: `get_summary()`;
-- **Nation**: `get_public_shards()`;
-- **Region**: `get_shards()`.
+- **AwesomeNations** `get_daily_data_dumps()`;
+- **AwesomeNations** `get_world_shards()`;
+- **AwesomeNations** `get_world_assembly_shards()`;
+- **Nation** `get_summary()`;
+- **Nation** `get_public_shards()`;
+- **Region** `get_shards()`.
 
 ### Modified methods:
-- **AwesomeNations**: `nationStates_birthday()` was renamed to `today_is_nationstates_birthday()`;
-- **AwesomeNations**: `nationStates_age()` was renamed to `get_nationstates_age()`.
+- **AwesomeNations** `nationStates_birthday()` was renamed to `today_is_nationstates_birthday()`;
+- **AwesomeNations** `nationStates_age()` was renamed to `get_nationstates_age()`.
 
 ### Removed methods:
-- **Nation**: `get_overview()`;
-- **Nation**: `get_activity()`;
-- **Nation**: `get_census()`;
-- **Region**: `get_overview()`;
-- **Region**: `get_world_census()`;
-- **Region**: `get_activity()`;
-- **Region**: `get_embassies()`.
+- **Nation** `get_overview()`;
+- **Nation** `get_activity()`;
+- **Nation** `get_census()`;
+- **Region** `get_overview()`;
+- **Region** `get_world_census()`;
+- **Region** `get_activity()`;
+- **Region** `get_embassies()`.
 
 ## </> 0.1.0 </>:
 
