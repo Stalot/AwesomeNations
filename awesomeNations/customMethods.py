@@ -65,6 +65,17 @@ def get_index(object: tuple | list, index: int, default: Optional[Any] = None) -
     except IndexError:
         return default
 
+def prettify_string(string: str) -> str:
+    separator: str = None
+    if "-" in string:
+        separator = "-"
+    elif "_" in string:
+        separator = "_"
+    else:
+        separator = " "
+    words = [w.capitalize() for w in string.split(separator)]
+    return join_keys(words, separator)
+    
+
 if __name__ == "__main__":
-    my_tuple = ("A", "B", "C", "D", "E")
-    print(get_index(my_tuple, 8))
+    print(prettify_string("Dives patriae"))

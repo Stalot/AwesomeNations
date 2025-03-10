@@ -5,7 +5,8 @@
 # </> 2.0.0 </>:
 
 - Nation authentication for private shards;
-- **AwesomeNations** `get_daily_data_dumps()` now just accepts nation or region daily data dumps.
+- **AwesomeNations** `get_daily_data_dumps()` now just accepts nation or region daily data dumps;
+- **AwesomeNations** `get_nationstates_age` now returns an int value.
 
 ### Bug fixes:
 - Problem while post processing complex numbers in XML response.

@@ -1,5 +1,5 @@
 from awesomeNations.connection import WrapperConnection, URLManager
-from awesomeNations.customMethods import join_keys, format_key
+from awesomeNations.customMethods import join_keys, format_key, prettify_string
 from awesomeNations.customObjects import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
@@ -82,13 +82,12 @@ class AwesomeNations():
             birthday = True
         return birthday
 
-    def get_nationstates_age(self) -> str:
+    def get_nationstates_age(self) -> int:
         "Current year - NationStates year of creation (NationStates was created in 2002)."
         created = 2002
         today = datetime.today().year
         age = today - created
-        result = f'Around {age-1}-{age} years old.'
-        return result
+        return age
 
     def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region"] = "nation") -> None:
         """
@@ -145,8 +144,9 @@ class AwesomeNations():
         def __init__(self,
                      nation_name: str = 'testlandia',
                      auth: Optional[Authentication] = None) -> None:
-            self.nation_name: str = format_key(nation_name, False, '%20')
-            self.nation_authentication: Authentication = auth
+            self.string_name: str = prettify_string(str(nation_name))
+            self.nation_name: str = format_key(self.string_name, False, '%20') # Parsed name
+            self.nation_authentication: Authentication = auth # Authentication
             wrapper.auth = self.nation_authentication
 
         def exists(self) -> bool:
@@ -222,7 +222,8 @@ class AwesomeNations():
         Class dedicated to NationStates region API.
         """
         def __init__(self, region_name: str = 'The Pacific') -> None:
-            self.region_name = format_key(region_name, False, '%20')
+            self.string_name: str = prettify_string(str(region_name))
+            self.region_name = format_key(self.string_name, False, '%20')
         
         def exists(self) -> bool:
             """
@@ -265,21 +266,20 @@ class AwesomeNations():
 if __name__ == "__main__":
     load_dotenv(".env")
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    nation = api.Nation("ORLYS")
+    nation = api.Nation("Free-reorganized-states")
     region = api.Region("Fullworthia")
     
-    print("My super blast cool app started!")
-    
     print("Current API version:", api.get_api_latest_version())
+    print("NationStates age:", api.get_nationstates_age())
     
     if nation.exists():
-        print(nation.nation_name, "exists.")
-        pp(nation.get_shards(("name", "fullname", "leader", "religion")))
+        print(nation.string_name, "exists.")
+        #pp(nation.get_shards(("name", "fullname", "leader", "religion")))
     else:
-        print(nation.nation_name, "doesn't exist.")
+        print(nation.string_name, "doesn't exist.")
     
     if region.exists():
-        print(region.region_name, "exists.")
-        pp(region.get_shards())
+        print(region.string_name, "exists.")
+        #pp(region.get_shards())
     else:
-        print(region.region_name, "doesn't exist.")
+        print(region.string_name, "doesn't exist.")

@@ -3,7 +3,7 @@ from pathlib import Path
 
 awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
 
-# Dowloads nation data dump
+# Dowloads nations data dump
 folder_path: Path = Path("datadumps")
 if not folder_path.exists():
     folder_path.mkdir()
