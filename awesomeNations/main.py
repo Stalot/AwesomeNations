@@ -3,13 +3,11 @@ from awesomeNations.customMethods import join_keys, format_key, prettify_string
 from awesomeNations.customObjects import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
-from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional
 from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
-import os
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -264,7 +262,6 @@ class AwesomeNations():
             return response
 
 if __name__ == "__main__":
-    load_dotenv(".env")
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
     nation = api.Nation("Free-reorganized-states")
     region = api.Region("Fullworthia")

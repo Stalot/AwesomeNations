@@ -4,13 +4,10 @@ from awesomeNations.customMethods import join_keys
 from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
 from pprint import pprint as pp
-from dotenv import load_dotenv
 from pathlib import Path
 import urllib3
 import logging
-import urllib
 import time
-import os
 
 logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
