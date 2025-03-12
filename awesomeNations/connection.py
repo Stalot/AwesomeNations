@@ -1,9 +1,9 @@
-import urllib3.util
 from awesomeNations.customObjects import AwesomeParser, Authentication
-from awesomeNations.customMethods import join_keys
+from awesomeNations.customMethods import join_keys, get_header
 from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
 from pprint import pprint as pp
+from urllib3.util import Retry
 from pathlib import Path
 import urllib3
 import logging
@@ -17,24 +17,26 @@ parser = AwesomeParser()
 class WrapperConnection():
     def __init__(self,
                  headers: dict = None,
-                 ratelimit_sleep = True,
-                 ratelimit_reset_time = 30,
-                 api_version = 12,
+                 ratelimit_sleep: bool = True,
+                 ratelimit_reset_time: int = 30,
+                 api_version: int = 12,
                  ):
         self.headers: dict = headers
         self.request_timeout: int | tuple = 10
-        self.ratelimit_sleep: int = ratelimit_sleep
+        self.ratelimit_sleep: bool = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
         self.ratelimit_remaining: int = None
+        self.ratelimit_requests_seen: int = None
+        self.ratelimit_limit: int = None
         self.api_version: int = api_version
         
-        retry_settings = urllib3.util.Retry(total=4,
-                                            connect=3,
-                                            read=3,
-                                            backoff_factor=1,
-                                            status_forcelist=[500, 502, 503, 504],
-                                            raise_on_status=False,
-                                            raise_on_redirect=False)
+        retry_settings = Retry(total=4,
+                                connect=3,
+                                read=3,
+                                backoff_factor=1,
+                                status_forcelist=[500, 502, 503, 504],
+                                raise_on_status=False,
+                                raise_on_redirect=False)
         self.pool_manager = urllib3.PoolManager(4,
                                                 self.headers,
                                                 retries=retry_settings)
@@ -66,10 +68,9 @@ class WrapperConnection():
         if self.auth and x_pin_header:
             if self.auth.xpin != x_pin_header:
                 self.auth.xpin = x_pin_header
-        
-        ratelimit_remaining: str | None = response.headers.get("Ratelimit-remaining")
-        self.ratelimit_remaining = int(ratelimit_remaining) if ratelimit_remaining else None
-        self.api_ratelimit()
+
+        self.update_ratelimit_status(response.headers)
+        self.check_api_ratelimit()
 
         parsed_response = parser.parse_xml(response.data.decode())
         return parsed_response
@@ -98,13 +99,12 @@ class WrapperConnection():
         
         self.last_request_headers.update(response.headers)
 
-        ratelimit_remaining: str | None = response.headers.get("Ratelimit-remaining")
-        self.ratelimit_remaining = int(ratelimit_remaining) if ratelimit_remaining else None
-        self.api_ratelimit()
+        self.update_ratelimit_status(response.headers)
+        self.check_api_ratelimit()
 
         return response.status
    
-    def api_ratelimit(self) -> None:
+    def check_api_ratelimit(self) -> None:
         """
         Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
@@ -113,6 +113,11 @@ class WrapperConnection():
                 logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
                 time.sleep(self.ratelimit_reset_time + 1)
                 logger.info("Hibernation finished")
+
+    def update_ratelimit_status(self, response_headers: dict) -> None:
+        self.ratelimit_limit = get_header(response_headers, "Ratelimit-limit")
+        self.ratelimit_remaining = get_header(response_headers, "Ratelimit-remaining")
+        self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
 
 class URLManager():
     def __init__(self, api_base_url: str):
@@ -166,5 +171,5 @@ if __name__ == "__main__":
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
     
     
-    data = wrapper.fetch_raw_data("https://www.nationstates.net/cgi-bin/api.cgi?a=version")
+    data = wrapper.fetch_api_data("https://www.nationstates.net/cgi-bin/api.cgi?nation=testlandia&q=capital")
     pp(data)

@@ -1,5 +1,5 @@
-from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customMethods import join_keys, format_key, prettify_string
+from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customObjects import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
@@ -118,15 +118,17 @@ class AwesomeNations():
         response: dict = wrapper.fetch_api_data(url)
         return response
 
-    def get_world_assembly_shards(self, council_id: int, shards: str | tuple[str] | list[str], **kwargs) -> dict:
+    def get_world_assembly_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
         Gets one or more shards from the World Assembly API.
         """
         for kwarg in kwargs:
             kwargs[kwarg] = join_keys(kwargs[kwarg])
         params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-        url: str = url_manager.generate_shards_url("wa", shards, params)
-        url = url.format(council_id)
+        url: str = url_manager.generate_shards_url("wa",
+                                                   shards,
+                                                   params,
+                                                   council_id=kwargs["council_id"])
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -135,6 +137,13 @@ class AwesomeNations():
         latest_version: int = int(wrapper.fetch_raw_data(url))
         return latest_version
 
+    def get_api_status(self) -> dict:
+        data: dict = {"ratelimit_remaining": wrapper.ratelimit_remaining,
+                      "ratelimit_requests_seen": wrapper.ratelimit_requests_seen,
+                      "ratelimit_limit": wrapper.ratelimit_limit,
+                      "ratelimit_reset_time": wrapper.ratelimit_reset_time}
+        return data
+
     class Nation:
         """
         Class dedicated to NationStates nation API.
@@ -142,8 +151,8 @@ class AwesomeNations():
         def __init__(self,
                      nation_name: str = 'testlandia',
                      auth: Optional[Authentication] = None) -> None:
-            self.string_name: str = prettify_string(str(nation_name))
-            self.nation_name: str = format_key(self.string_name, False, '%20') # Parsed name
+            self.pretty_name: str = prettify_string(str(nation_name))
+            self.nation_name: str = format_key(nation_name, False, '%20') # Parsed name
             self.nation_authentication: Authentication = auth # Authentication
             wrapper.auth = self.nation_authentication
 
@@ -220,8 +229,8 @@ class AwesomeNations():
         Class dedicated to NationStates region API.
         """
         def __init__(self, region_name: str = 'The Pacific') -> None:
-            self.string_name: str = prettify_string(str(region_name))
-            self.region_name = format_key(self.string_name, False, '%20')
+            self.pretty_name: str = prettify_string(str(region_name))
+            self.region_name = format_key(region_name, False, '%20')
         
         def exists(self) -> bool:
             """
@@ -263,20 +272,21 @@ class AwesomeNations():
 
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    nation = api.Nation("Free-reorganized-states")
+    nation = api.Nation("america the greater")
     region = api.Region("Fullworthia")
     
     print("Current API version:", api.get_api_latest_version())
     print("NationStates age:", api.get_nationstates_age())
-    
+        
     if nation.exists():
-        print(nation.string_name, "exists.")
-        #pp(nation.get_shards(("name", "fullname", "leader", "religion")))
+        print(nation.pretty_name, "exists.")
     else:
-        print(nation.string_name, "doesn't exist.")
-    
+        print(nation.pretty_name, "doesn't exist.")
     if region.exists():
-        print(region.string_name, "exists.")
-        #pp(region.get_shards())
+        print(region.pretty_name, "exists.")
     else:
-        print(region.string_name, "doesn't exist.")
+        print(region.pretty_name, "doesn't exist.")
+        
+    pp(api.get_api_status())
+    
+    #pp(api.get_world_assembly_shards("delegates", council_id=1))

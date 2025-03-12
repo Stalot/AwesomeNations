@@ -75,7 +75,18 @@ def prettify_string(string: str) -> str:
         separator = " "
     words = [w.capitalize() for w in string.split(separator)]
     return join_keys(words, separator)
-    
+
+def get_header(headers: dict, key: str, default = None) -> int | None:
+    output_value: Any | None = default
+    key_value: str | None = headers.get(key)
+    if key_value:
+        output_value = key_value
+        if string_is_number(key_value):
+            output_value = int(key_value)
+    return output_value
 
 if __name__ == "__main__":
-    print(prettify_string("Dives patriae"))
+    my_headers = {"Connection": "Keep-alive",
+                  "Requests-Remaining": "34",
+                  "Cache": "no-cache"}
+    print(get_header(my_headers, "Cache"))
