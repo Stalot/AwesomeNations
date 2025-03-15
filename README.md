@@ -93,9 +93,9 @@ Returns:
             'id': 'testlandia'}}
 ```
 
-Now, let's see what truly separates little boys from grown men: private shards!
+Now, let's see what truly separates little boys from grown men: **private shards!**
 
-**NOTE:** Storing sensitive information, like your nation password, in plain text is highly discouraged due to security risks... Instead, I strongly recommend using [environment variables](https://dev.to/jakewitcher/using-env-files-for-environment-variables-in-python-applications-55a1) to manage your dirty secrets. The example below uses [python-dotenv](https://pypi.org/project/python-dotenv/) to prevent my mother-in-law from hacking me! :D
+**NOTE:** Storing sensitive information, like your nation password, in plain text is highly discouraged due to security risks... Instead, I strongly recommend using [environment variables](https://dev.to/jakewitcher/using-env-files-for-environment-variables-in-python-applications-55a1) to keep your dirty secrets. The example below uses [python-dotenv](https://pypi.org/project/python-dotenv/) to prevent bad people like you or my mother-in-law from hacking my account! :D
 
 ``` python
 from awesomeNations import AwesomeNations
