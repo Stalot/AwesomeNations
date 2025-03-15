@@ -1,6 +1,6 @@
 from awesomeNations.customMethods import join_keys, format_key, prettify_string
 from awesomeNations.connection import WrapperConnection, URLManager
-from awesomeNations.customObjects import Authentication
+from awesomeNations.awesomeTools import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -8,6 +8,10 @@ from typing import Optional
 from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
+import logging
+
+logger = logging.getLogger("AwesomeLogger")
+logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 wrapper = WrapperConnection()
 url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
@@ -133,15 +137,17 @@ class AwesomeNations():
         return response
 
     def get_api_latest_version(self) -> int:
+        """Gets NationStates API latest version"""
         url = "https://www.nationstates.net/cgi-bin/api.cgi?a=version"
         latest_version: int = int(wrapper.fetch_raw_data(url))
         return latest_version
 
-    def get_api_status(self) -> dict:
-        data: dict = {"ratelimit_remaining": wrapper.ratelimit_remaining,
-                      "ratelimit_requests_seen": wrapper.ratelimit_requests_seen,
-                      "ratelimit_limit": wrapper.ratelimit_limit,
-                      "ratelimit_reset_time": wrapper.ratelimit_reset_time}
+    def get_wrapper_status(self) -> dict[str, int]:
+        data: dict[str, int] = {"ratelimit_remaining": wrapper.ratelimit_remaining,
+                                "ratelimit_requests_seen": wrapper.ratelimit_requests_seen,
+                                "ratelimit_limit": wrapper.ratelimit_limit,
+                                "ratelimit_reset_time": wrapper.ratelimit_reset_time
+                                }
         return data
 
     class Nation:
@@ -275,18 +281,9 @@ if __name__ == "__main__":
     nation = api.Nation("america the greater")
     region = api.Region("Fullworthia")
     
-    print("Current API version:", api.get_api_latest_version())
+    #print("Current API version:", api.get_api_latest_version())
     print("NationStates age:", api.get_nationstates_age())
-        
-    if nation.exists():
-        print(nation.pretty_name, "exists.")
-    else:
-        print(nation.pretty_name, "doesn't exist.")
-    if region.exists():
-        print(region.pretty_name, "exists.")
-    else:
-        print(region.pretty_name, "doesn't exist.")
-        
-    pp(api.get_api_status())
     
-    #pp(api.get_world_assembly_shards("delegates", council_id=1))
+    print(nation.pretty_name, "exists:", nation.exists())
+        
+    pp(api.get_wrapper_status())

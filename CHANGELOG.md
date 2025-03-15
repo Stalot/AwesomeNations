@@ -15,7 +15,8 @@
 - **Nation** `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
 ### New methods:
-- **AwesomeNations** `get_api_latest_version()`.
+- **AwesomeNations** `get_api_latest_version()`;
+- **AwesomeNations** `get_wrapper_status()`.
 
 ### Removed methods:
 - **Nation** `get_summary()`.

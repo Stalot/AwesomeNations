@@ -1,5 +1,6 @@
-from awesomeNations.customObjects import AwesomeParser, Authentication
 from awesomeNations.customMethods import join_keys, get_header
+from awesomeNations.customObjects import AwesomeParser
+from awesomeNations.awesomeTools import Authentication
 from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
 from pprint import pprint as pp
@@ -10,7 +11,7 @@ import logging
 import time
 
 logger = logging.getLogger("AwesomeLogger")
-logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
+# logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 parser = AwesomeParser()
 
@@ -70,7 +71,7 @@ class WrapperConnection():
                 self.auth.xpin = x_pin_header
 
         self.update_ratelimit_status(response.headers)
-        self.check_api_ratelimit()
+        # self.check_api_ratelimit()
 
         parsed_response = parser.parse_xml(response.data.decode())
         return parsed_response
@@ -81,6 +82,8 @@ class WrapperConnection():
         
         if response.status != 200:
             raise HTTPError(response.status)
+        
+        self.update_ratelimit_status(response.headers)
         
         return response.data.decode().strip()
 
@@ -100,7 +103,7 @@ class WrapperConnection():
         self.last_request_headers.update(response.headers)
 
         self.update_ratelimit_status(response.headers)
-        self.check_api_ratelimit()
+        # self.check_api_ratelimit()
 
         return response.status
    
@@ -109,7 +112,7 @@ class WrapperConnection():
         Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
         if self.ratelimit_remaining:
-            if self.ratelimit_remaining <= 1:
+            if self.ratelimit_remaining < 2:
                 logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
                 time.sleep(self.ratelimit_reset_time + 1)
                 logger.info("Hibernation finished")
@@ -118,6 +121,7 @@ class WrapperConnection():
         self.ratelimit_limit = get_header(response_headers, "Ratelimit-limit")
         self.ratelimit_remaining = get_header(response_headers, "Ratelimit-remaining")
         self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
+        self.check_api_ratelimit()
 
 class URLManager():
     def __init__(self, api_base_url: str):

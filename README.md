@@ -93,6 +93,32 @@ Returns:
             'id': 'testlandia'}}
 ```
 
+Now, let's see what truly separates little boys from grown men: private shards!
+
+**NOTE:** Storing sensitive information, like your nation password, in plain text is highly discouraged due to security risks... Instead, I strongly recommend using [environment variables](https://dev.to/jakewitcher/using-env-files-for-environment-variables-in-python-applications-55a1) to manage your dirty secrets. The example below uses [python-dotenv](https://pypi.org/project/python-dotenv/) to prevent my mother-in-law from hacking me! :D
+
+``` python
+from awesomeNations import AwesomeNations
+from awesomeNations.awesomeTools import Authentication
+from dotenv import load_dotenv
+from pprint import pp
+import os
+
+# Get data from .env file
+load_dotenv()
+password = os.environ["MY_PASSWORD"]
+
+awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+nation = awesomeAPI.Nation("your nation name here!", Authentication(password))
+
+data = nation.get_shards(('notices', 'ping', 'unread'))
+pp(data)
+```
+
+Meanwhile in the .env file... Let's say your password is *"coolSkeleton98"*:
+
+`MY_PASSWORD = "coolSkeleton98"`
+
 ## Regions 🌍
 
 Same shard logic with regions!
