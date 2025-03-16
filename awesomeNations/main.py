@@ -142,14 +142,6 @@ class AwesomeNations():
         latest_version: int = int(wrapper.fetch_raw_data(url))
         return latest_version
 
-    def get_wrapper_status(self) -> dict[str, int]:
-        data: dict[str, int] = {"ratelimit_remaining": wrapper.ratelimit_remaining,
-                                "ratelimit_requests_seen": wrapper.ratelimit_requests_seen,
-                                "ratelimit_limit": wrapper.ratelimit_limit,
-                                "ratelimit_reset_time": wrapper.ratelimit_reset_time
-                                }
-        return data
-
     class Nation:
         """
         Class dedicated to NationStates nation API.

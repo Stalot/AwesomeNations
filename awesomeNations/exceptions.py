@@ -43,6 +43,7 @@ def status_code_context(status_code: int = None) -> str | None:
         404: "Not Found",
         408: "Request Timeout",
         409: "Conflict",
+        429: "Too Many Requests",
         500: "Internal Server Error",
         502: "Bad Gateway",
         503: "Service Unavailable",

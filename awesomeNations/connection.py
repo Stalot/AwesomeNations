@@ -28,19 +28,18 @@ class WrapperConnection():
         self.ratelimit_reset_time: int = ratelimit_reset_time
         self.ratelimit_remaining: int = None
         self.ratelimit_requests_seen: int = None
-        self.ratelimit_limit: int = None
         self.api_version: int = api_version
         
-        retry_settings = Retry(total=4,
-                                connect=3,
-                                read=3,
-                                backoff_factor=1,
-                                status_forcelist=[500, 502, 503, 504],
-                                raise_on_status=False,
-                                raise_on_redirect=False)
+        #retry_settings = Retry(total=4,
+        #                        connect=3,
+        #                        read=3,
+        #                        backoff_factor=1,
+        #                        status_forcelist=[500, 502, 503, 504],
+        #                        raise_on_status=True,
+        #                        raise_on_redirect=True)
         self.pool_manager = urllib3.PoolManager(4,
                                                 self.headers,
-                                                retries=retry_settings)
+                                                retries=False)
         self.last_request_headers: dict = {}
         self.auth: Optional[Authentication] = None
 
@@ -111,14 +110,13 @@ class WrapperConnection():
         """
         Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
-        if self.ratelimit_remaining:
-            if self.ratelimit_remaining < 2:
-                logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
-                time.sleep(self.ratelimit_reset_time + 1)
-                logger.info("Hibernation finished")
+        if self.ratelimit_sleep:
+            if self.ratelimit_remaining != None and self.ratelimit_remaining < 1:
+                    logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
+                    time.sleep(self.ratelimit_reset_time + 1)
+                    logger.info("Hibernation finished")
 
     def update_ratelimit_status(self, response_headers: dict) -> None:
-        self.ratelimit_limit = get_header(response_headers, "Ratelimit-limit")
         self.ratelimit_remaining = get_header(response_headers, "Ratelimit-remaining")
         self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
         self.check_api_ratelimit()
