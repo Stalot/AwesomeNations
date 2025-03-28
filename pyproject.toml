@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "AwesomeNations"
+description = "A simple and cozy wrapper for NationStates"
+version = "2.0.0.1"
+license = "MIT"
+requires-python = ">= 3.10"
+dependencies = ["urllib3==2.3.0", "xmltodict==0.14.2"]
+keywords=["NationStates", "API wrapper", "NationStates wrapper", "wrapper"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python",
+  "Operating System :: OS Independent"
+]
+authors = [
+  {name = "Orly Neto", email = "orly2carvalhoneto@gmail.com"}
+]
+maintainers = [
+  {name = "Orly Neto", email = "orly2carvalhoneto@gmail.com"}
+]
+dynamic = ["readme"]
+
+[project.urls]
+Repository = "https://github.com/Stalot/AwesomeNations"
+Issues = "https://github.com/Stalot/AwesomeNations/issues"
+Changelog = "https://github.com/Stalot/AwesomeNations/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["awesomeNations*"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown"}
