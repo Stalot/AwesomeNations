@@ -270,7 +270,7 @@ class AwesomeNations():
 
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    nation = api.Nation("america the greater")
+    nation = api.Nation("testlandia")
     region = api.Region("Fullworthia")
     
     #print("Current API version:", api.get_api_latest_version())
@@ -278,4 +278,4 @@ if __name__ == "__main__":
     
     print(nation.pretty_name, "exists:", nation.exists())
         
-    pp(api.get_wrapper_status())
+    pp(nation.get_shards(["name", "fullname", "motto", "category", "religion", "capital"]))

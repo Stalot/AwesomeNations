@@ -1,10 +1,10 @@
 from awesomeNations.customMethods import join_keys, get_header
+from awesomeNations.exceptions import HTTPError, DataError
 from awesomeNations.customObjects import AwesomeParser
 from awesomeNations.awesomeTools import Authentication
-from awesomeNations.exceptions import HTTPError
 from typing import Optional, Literal
+from urllib3 import BaseHTTPResponse
 from pprint import pprint as pp
-from urllib3.util import Retry
 from pathlib import Path
 import urllib3
 import logging
@@ -72,7 +72,8 @@ class WrapperConnection():
         self.update_ratelimit_status(response.headers)
         # self.check_api_ratelimit()
 
-        parsed_response = parser.parse_xml(response.data.decode())
+        # parsed_response = parser.parse_xml(response.data.decode())
+        parsed_response = parser.parse_xml(self.decode_response_data(response))
         return parsed_response
 
     def fetch_raw_data(self,
@@ -84,7 +85,8 @@ class WrapperConnection():
         
         self.update_ratelimit_status(response.headers)
         
-        return response.data.decode().strip()
+        #return response.data.decode().strip()
+        return self.decode_response_data(response).strip()
 
     def fetch_file(self,
                    url: str,
@@ -120,6 +122,18 @@ class WrapperConnection():
         self.ratelimit_remaining = get_header(response_headers, "Ratelimit-remaining")
         self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
         self.check_api_ratelimit()
+
+    def decode_response_data(self, response: BaseHTTPResponse) -> str | None:
+        encodings: tuple[str] = ("UTF-8", "UTF-16", "LATIN-1")
+        tries: int = 0
+        for enc in encodings:
+            try:
+                return response.data.decode(enc)
+            except Exception as decoding_error:
+                logger.warning(F"Failed to decode response using {enc}")
+                tries += 1
+                if tries >= len(encodings):
+                    raise DataError("API Response", "Decoding error.")
 
 class URLManager():
     def __init__(self, api_base_url: str):

@@ -1,4 +1,6 @@
 from random import random
+from typing import Any
+from urllib3 import BaseHTTPResponse
 
 def motivational_quotes() -> str:
     quotes = ('only put off until tomorrow what you are willing to die having left undone.',
@@ -54,6 +56,9 @@ def status_code_context(status_code: int = None) -> str | None:
     return output
 
 class HTTPError(Exception):
+    """
+    Exception raised when request status code is not `200` (Failed).
+    """
     def __init__(self, status_code) -> None:
         self.status_code_context: str | None = status_code_context(status_code)
         if not self.status_code_context:
@@ -64,5 +69,13 @@ class HTTPError(Exception):
         self.message: str = f'HTTP error, status code: {status_code}{self.status_code_context}. Hope This Totally Pleases-you!'
         super().__init__(f'{self.message}\nJokes aside... {motivational_quotes().capitalize()}')
 
+class DataError(Exception):
+    """
+    Exception to warn about data processing failures, such encoding or decoding errors.
+    """
+    def __init__(self, data_name: str, reason: str):
+        message = f"Could not process [{data_name}] data: {reason}"
+        super().__init__(message)
+
 if __name__ == "__main__":
-    raise HTTPError(409)
+    raise DataError("API Response", "Decoding error.")
