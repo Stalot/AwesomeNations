@@ -1,7 +1,7 @@
 from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError
 from awesomeNations.awesomeTools import AwesomeParser
-from awesomeNations.awesomeTools import Authentication
+from awesomeNations.awesomeTools import NationAuth
 from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse
 from pprint import pprint as pp
@@ -29,18 +29,11 @@ class WrapperConnection():
         self.ratelimit_requests_seen: int = None
         self.api_version: int = api_version
         
-        #retry_settings = Retry(total=4,
-        #                        connect=3,
-        #                        read=3,
-        #                        backoff_factor=1,
-        #                        status_forcelist=[500, 502, 503, 504],
-        #                        raise_on_status=True,
-        #                        raise_on_redirect=True)
-        self.pool_manager = urllib3.PoolManager(4,
+        self._pool_manager = urllib3.PoolManager(4,
                                                 self.headers,
                                                 retries=False)
         self.last_request_headers: dict = {}
-        self.auth: Optional[Authentication] = None
+        self._auth: Optional[NationAuth] = None
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
@@ -52,10 +45,10 @@ class WrapperConnection():
         
         # Updates headers X-Password, X-Autologin and X-Pin in the next request
         # for actions that need authentication (Like private shards).
-        if self.auth:
-            self.headers.update(self.auth.get())
+        if self._auth:
+            self.headers.update(self._auth.get())
 
-        response = self.pool_manager.request("GET", url, headers=self.headers, fields=query_parameters, timeout=self.request_timeout)
+        response = self._pool_manager.request("GET", url, headers=self.headers, fields=query_parameters, timeout=self.request_timeout)
 
         if response.status != 200:
             raise HTTPError(response.status)
@@ -63,10 +56,10 @@ class WrapperConnection():
         self.last_request_headers.update(response.headers)
         x_pin_header: int | None = response.headers.get("X-Pin")
         
-        # Updates self.auth X-Pin if necessary (for quick sucessive requests):
-        if self.auth and x_pin_header:
-            if self.auth.xpin != x_pin_header:
-                self.auth.xpin = x_pin_header
+        # Updates self._auth X-Pin if necessary (for quick sucessive requests):
+        if self._auth and x_pin_header:
+            if self._auth.xpin != x_pin_header:
+                self._auth.xpin = x_pin_header
 
         self.update_ratelimit_status(response.headers)
 
@@ -75,7 +68,7 @@ class WrapperConnection():
 
     def fetch_raw_data(self,
                        url: str) -> str:
-        response = self.pool_manager.request("GET", url)
+        response = self._pool_manager.request("GET", url)
         
         if response.status != 200:
             raise HTTPError(response.status)
@@ -90,12 +83,12 @@ class WrapperConnection():
         "Dowloads a file"
         if not Path(filepath).suffix:
             raise ValueError(f"{filepath}: This path needs a suffix dude!")
-        with self.pool_manager.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
+        with self._pool_manager.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
             for chunk in file_response.stream(10**4, True):
                 file_out.write(chunk)
 
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
-        response = self.pool_manager.request("GET", url, headers=self.headers, timeout=20)
+        response = self._pool_manager.request("GET", url, headers=self.headers, timeout=20)
         
         self.last_request_headers.update(response.headers)
 
@@ -193,7 +186,6 @@ if __name__ == "__main__":
     headers = {"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}
     wrapper = WrapperConnection(headers)
     url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
-    
     
     data = wrapper.fetch_api_data("https://www.nationstates.net/cgi-bin/api.cgi?nation=testlandia&q=capital")
     pp(data)

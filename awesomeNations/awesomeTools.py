@@ -6,7 +6,7 @@ import xmltodict
 import string
 import random
 
-class Authentication():
+class NationAuth():
     """Nation authentication"""
     def __init__(self,
                  password: Optional[str] = None,
@@ -92,7 +92,6 @@ class Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    auth = Authentication("Hunterx5", "2.8645a5uj_")
+    auth = NationAuth("Hunterx5", "2.8645a5uj_")
     print(auth.password)
     print(auth.autologin)
-    print(auth.get())
