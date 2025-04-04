@@ -1,4 +1,4 @@
-from awesomeNations import AwesomeNations, Authentication
+from awesomeNations import AwesomeNations
 from dotenv import load_dotenv
 from pprint import pp
 import os
@@ -7,8 +7,8 @@ import os
 load_dotenv()
 password = os.environ["MY_PASSWORD"]
 
-awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
-nation = awesomeAPI.Nation("your nation name here!", Authentication(password))
+api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+nation = api.Nation("your nation name here!", password)
 
 data = nation.get_shards(('notices', 'ping', 'unread'))
 pp(data)

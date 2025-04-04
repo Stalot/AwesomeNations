@@ -7,13 +7,13 @@ from awesomeNations import AwesomeNations
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
 
 def main():
     try:
         censusid = int(input("insert census id: "))
         
-        world_api_data: dict = awesomeAPI.get_world_shards(["censusname", "censusdesc"], scale=censusid)
+        world_api_data: dict = api.get_world_shards(["censusname", "censusdesc"], scale=censusid)
         census_description: dict = world_api_data["world"]["censusdesc"]
         
         nation_census_description: str = "No description available."

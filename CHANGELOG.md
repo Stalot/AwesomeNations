@@ -4,19 +4,19 @@
 
 # </> 2.0.0 </>:
 
-- Nation authentication for private shards;
+- **Nation** Authentication;
 - **AwesomeNations** `get_daily_data_dumps()` now just accepts nation or region daily data dumps;
-- **AwesomeNations** `get_nationstates_age` now returns an int value.
+- **AwesomeNations** `get_nationstates_age()` now returns an int value.
 
 ### Bug fixes:
-- Problem while post processing complex numbers in XML response.
+- Problem while post processing complex numbers in XML response;
+- Decoding error with certaim api versions.
 
 ### Deprecated methods:
 - **Nation** `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
 ### New methods:
 - **AwesomeNations** `get_api_latest_version()`;
-- **AwesomeNations** `get_wrapper_status()`.
 
 ### Removed methods:
 - **Nation** `get_summary()`.

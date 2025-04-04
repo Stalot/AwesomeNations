@@ -48,7 +48,7 @@ Let's begin with a simple example...
 from awesomeNations import AwesomeNations
 from pprint import pprint as pp # Pretty printing
 
-api = AwesomeNations("My App/1.0.0 (by: Nation A, usedBy: Nation B)")
+api = AwesomeNations("My App/1.0.0")
 nation = api.Nation("Testlandia")
 
 if nation.exists():
@@ -79,37 +79,36 @@ Returns:
 
 ``` python
 {'nation': {'census': {'scale': [{'id': 0,
-                                  'rank': 95822,
+                                  'rank': 97963,
                                   'rrank': 12,
-                                  'score': 66},
+                                  'score': 65.44},
                                  {'id': 12,
-                                  'rank': 334021,
-                                  'rrank': 47,
-                                  'score': -14.78},
+                                  'rank': 326811,
+                                  'rrank': 46,
+                                  'score': -14.3},
                                  {'id': 46,
-                                  'rank': 28478,
-                                  'rrank': 10,
-                                  'score': 7448.55}]},
+                                  'rank': 28725,
+                                  'rrank': 11,
+                                  'score': 7432.07}]},
             'id': 'testlandia'}}
 ```
 
 Now, let's see what truly separates little boys from grown men: **private shards!**
 
-**NOTE:** Storing sensitive information, like your nation password, in plain text is highly discouraged due to security risks... Instead, I strongly recommend using [environment variables](https://dev.to/jakewitcher/using-env-files-for-environment-variables-in-python-applications-55a1) to keep your dirty secrets. The example below uses [python-dotenv](https://pypi.org/project/python-dotenv/) to prevent bad people like you or my mother-in-law from hacking my account! :D
+**NOTE:** It's strongly recommended to use [environment variables](https://dev.to/jakewitcher/using-env-files-for-environment-variables-in-python-applications-55a1) to keep your dirty secrets... Secrets. The example below uses [python-dotenv](https://pypi.org/project/python-dotenv/) to prevent bad people like you or my mother-in-law from hacking my account! :D
 
 ``` python
 from awesomeNations import AwesomeNations
-from awesomeNations.awesomeTools import Authentication
 from dotenv import load_dotenv
 from pprint import pp
 import os
 
-# Get data from .env file
+# Get sensitive data from .env file
 load_dotenv()
 password = os.environ["MY_PASSWORD"]
 
-awesomeAPI = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
-nation = awesomeAPI.Nation("your nation name here!", Authentication(password))
+api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+nation = api.Nation("your nation name here!", password)
 
 data = nation.get_shards(('notices', 'ping', 'unread'))
 pp(data)
@@ -127,7 +126,7 @@ Same shard logic with regions!
 from awesomeNations import AwesomeNations
 from pprint import pprint as pp # Pretty printing
 
-api = AwesomeNations("My App/1.0.0 (by: Nation A, usedBy: Nation B)")
+api = AwesomeNations("My App/1.0.0")
 region = api.Region("The Pacific")
 
 if region.exists():
