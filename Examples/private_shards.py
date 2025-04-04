@@ -1,10 +1,9 @@
-from awesomeNations import AwesomeNations
-from awesomeNations.awesomeTools import Authentication
+from awesomeNations import AwesomeNations, Authentication
 from dotenv import load_dotenv
 from pprint import pp
 import os
 
-# Get data from .env file
+# Get sensitive data from .env file
 load_dotenv()
 password = os.environ["MY_PASSWORD"]
 

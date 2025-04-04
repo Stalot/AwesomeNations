@@ -1,8 +1,8 @@
-from awesomeNations.customMethods import join_keys, get_header
+from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError
-from awesomeNations.customObjects import AwesomeParser
+from awesomeNations.awesomeTools import AwesomeParser
 from awesomeNations.awesomeTools import Authentication
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse
 from pprint import pprint as pp
 from pathlib import Path
@@ -11,7 +11,6 @@ import logging
 import time
 
 logger = logging.getLogger("AwesomeLogger")
-# logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 parser = AwesomeParser()
 
@@ -115,8 +114,8 @@ class WrapperConnection():
                     logger.info("Hibernation finished")
 
     def update_ratelimit_status(self, response_headers: dict) -> None:
-        self.ratelimit_remaining = get_header(response_headers, "Ratelimit-remaining")
-        self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
+        self.ratelimit_remaining = self.get_header(response_headers, "Ratelimit-remaining")
+        self.ratelimit_requests_seen = self.get_header(response_headers, "X-ratelimit-requests-seen")
         self.check_api_ratelimit()
 
     def decode_response_data(self, response: BaseHTTPResponse) -> dict[str] | None:
@@ -134,6 +133,15 @@ class WrapperConnection():
                 tries += 1
                 if tries >= len(encodings):
                     raise DataError("API Response", "Decoding error.")
+
+    def get_header(self, headers: dict, key: str, default = None) -> int | None:
+        output_value: Any | None = default
+        key_value: str | None = headers.get(key)
+        if key_value:
+            output_value = key_value
+            if string_is_number(key_value):
+                output_value = int(key_value)
+        return output_value
 
 class URLManager():
     def __init__(self, api_base_url: str):

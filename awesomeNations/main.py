@@ -1,5 +1,5 @@
-from awesomeNations.customMethods import join_keys, format_key, prettify_string
 from awesomeNations.connection import WrapperConnection, URLManager
+from awesomeNations.customMethods import join_keys, format_key
 from awesomeNations.awesomeTools import Authentication
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
@@ -162,7 +162,7 @@ class AwesomeNations():
         def __init__(self,
                      nation_name: str = 'testlandia',
                      auth: Optional[Authentication] = None) -> None:
-            self.pretty_name: str = prettify_string(str(nation_name))
+            # self.pretty_name: str = prettify_string(str(nation_name))
             self.nation_name: str = format_key(nation_name, False, '%20') # Parsed name
             self.nation_authentication: Authentication = auth # Authentication
             wrapper.auth = self.nation_authentication
@@ -240,7 +240,7 @@ class AwesomeNations():
         Class dedicated to NationStates region API.
         """
         def __init__(self, region_name: str = 'The Pacific') -> None:
-            self.pretty_name: str = prettify_string(str(region_name))
+            # self.pretty_name: str = prettify_string(str(region_name))
             self.region_name = format_key(region_name, False, '%20')
         
         def exists(self) -> bool:
@@ -289,6 +289,7 @@ if __name__ == "__main__":
     #print("Current API version:", api.get_api_latest_version())
     print("NationStates age:", api.get_nationstates_age())
     
-    print(nation.pretty_name, "exists:", nation.exists())
+    print(nation.nation_name, "exists:", nation.exists())
         
-    pp(nation.get_shards(["name", "fullname", "motto", "category", "religion", "capital"]))
+    pp(api.get_world_shards("Censusname", scale=32))
+    pp(api.get_world_assembly_shards("delegates", council_id=1))
