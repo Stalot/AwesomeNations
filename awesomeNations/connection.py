@@ -70,9 +70,7 @@ class WrapperConnection():
                 self.auth.xpin = x_pin_header
 
         self.update_ratelimit_status(response.headers)
-        # self.check_api_ratelimit()
 
-        # parsed_response = parser.parse_xml(response.data.decode())
         parsed_response = parser.parse_xml(self.decode_response_data(response))
         return parsed_response
 
@@ -85,8 +83,7 @@ class WrapperConnection():
         
         self.update_ratelimit_status(response.headers)
         
-        #return response.data.decode().strip()
-        return self.decode_response_data(response).strip()
+        return self.decode_response_data(response)["data"].strip()
 
     def fetch_file(self,
                    url: str,
@@ -104,7 +101,6 @@ class WrapperConnection():
         self.last_request_headers.update(response.headers)
 
         self.update_ratelimit_status(response.headers)
-        # self.check_api_ratelimit()
 
         return response.status
    
@@ -123,12 +119,16 @@ class WrapperConnection():
         self.ratelimit_requests_seen = get_header(response_headers, "X-ratelimit-requests-seen")
         self.check_api_ratelimit()
 
-    def decode_response_data(self, response: BaseHTTPResponse) -> str | None:
-        encodings: tuple[str] = ("UTF-8", "UTF-16", "LATIN-1")
+    def decode_response_data(self, response: BaseHTTPResponse) -> dict[str] | None:
+        encodings: tuple[str] = ("UTF-8", "LATIN-1")
         tries: int = 0
         for enc in encodings:
             try:
-                return response.data.decode(enc)
+                data = {
+                    "encoding": enc,
+                    "data": response.data.decode(enc)
+                }
+                return data
             except Exception as decoding_error:
                 logger.warning(F"Failed to decode response using {enc}")
                 tries += 1

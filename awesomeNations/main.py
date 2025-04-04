@@ -8,6 +8,7 @@ from typing import Optional
 from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
+from logging import WARNING
 import logging
 
 logger = logging.getLogger("AwesomeLogger")
@@ -55,6 +56,10 @@ class AwesomeNations():
     ## api_version: int
     
     This setting allows you to specify the NationStates API version your script uses.
+
+    ## log_level: int | None
+    
+    Sets logging log level, if None is given, disables logging.
     """
 
     def __init__(self,
@@ -62,7 +67,8 @@ class AwesomeNations():
                  request_timeout: int | tuple = (15, 10),
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
-                 api_version: int = 12):
+                 api_version: int = 12,
+                 log_level: int | None = WARNING):
 
         headers: dict = {
         "User-Agent": user_agent,
@@ -74,6 +80,13 @@ class AwesomeNations():
         wrapper.ratelimit_sleep = ratelimit_sleep
         wrapper.ratelimit_reset_time = ratelimit_reset_time
         wrapper.api_version = api_version
+        
+        if log_level is None:
+            logger.disabled = True
+        elif type(log_level) is int:
+            logger.level = log_level
+        else:
+            raise ValueError(f"Invalid {type(log_level).__name__} '{log_level}', log_level must be an int (to change level) or None (to disable logging)")
 
     def today_is_nationstates_birthday(self) -> bool:
         "Today is 11/13?"

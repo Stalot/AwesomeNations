@@ -1,6 +1,4 @@
 from random import random
-from typing import Any
-from urllib3 import BaseHTTPResponse
 
 def motivational_quotes() -> str:
     quotes = ('only put off until tomorrow what you are willing to die having left undone.',
@@ -74,7 +72,7 @@ class DataError(Exception):
     Exception to warn about data processing failures, such encoding or decoding errors.
     """
     def __init__(self, data_name: str, reason: str):
-        message = f"Could not process [{data_name}] data: {reason}"
+        message = f"Could not process [{data_name}]: {reason}"
         super().__init__(message)
 
 if __name__ == "__main__":
