@@ -1,5 +1,7 @@
 from random import random
 
+# This is probably being removed because it's not professional, makes the error message look
+# more confusing or even ANNOYING, instead of actually motivating who is reading it.
 def motivational_quotes() -> str:
     quotes = ('only put off until tomorrow what you are willing to die having left undone.',
               'all our dreams can come true, if we have the courage to pursue them.',
@@ -7,7 +9,7 @@ def motivational_quotes() -> str:
               "you've got to get up every morning with determination if you're going to go to bed with satisfaction.",
               'dream big. Work hard.',
               'you are your only limit.',
-              "never be limited by other people's limited imaginations."
+              "never be limited by other people's limited imaginations.",
               'we cannot solve problems with the kind of thinking we employed when we came up with them.',
               'stay away from those people who try to disparage your ambitions. Small minds will always do that, but great minds will give you a feeling that you can become great too.',
               'success is not final; failure is not fatal: It is the courage to continue that counts.',
@@ -65,7 +67,7 @@ class HTTPError(Exception):
             self.status_code_context = f" {self.status_code_context}"
 
         self.message: str = f'HTTP error, status code: {status_code}{self.status_code_context}. Hope This Totally Pleases-you!'
-        super().__init__(f'{self.message}\nJokes aside... {motivational_quotes().capitalize()}')
+        super().__init__(f'{self.message}')
 
 class DataError(Exception):
     """
@@ -76,4 +78,4 @@ class DataError(Exception):
         super().__init__(message)
 
 if __name__ == "__main__":
-    raise DataError("API Response", "Decoding error.")
+    raise HTTPError(404)

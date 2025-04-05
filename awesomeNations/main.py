@@ -228,6 +228,7 @@ class AwesomeNations():
                                                        shards,
                                                        params,
                                                        nation_name=self.nation_name)
+            logger.warning("get_public_shards() is deprecated.")
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -304,7 +305,7 @@ class AwesomeNations():
             return response
 
 if __name__ == "__main__":
-    api = AwesomeNations("AwesomeNations/Test")
+    api = AwesomeNations("AwesomeNations/Test", log_level=0)
     print(api)
-    print(api.Nation("testlandia"))
+    print(api.Nation("testlandia").get_public_shards("name"))
     print(api.Region("the pacific"))

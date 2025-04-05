@@ -42,6 +42,7 @@ class WrapperConnection():
         This fetches API data and automatically parses it: (xml response -> python dictionary)
         """
         url = url.format(v=self.api_version)
+        logger.debug(f"Fetching API data: {url}")
         
         # Updates headers X-Password, X-Autologin and X-Pin in the next request
         # for actions that need authentication (Like private shards).
@@ -68,6 +69,8 @@ class WrapperConnection():
 
     def fetch_raw_data(self,
                        url: str) -> str:
+        logger.debug(f"Fetching raw data: {url}")
+        
         response = self._pool_manager.request("GET", url)
         
         if response.status != 200:
@@ -81,18 +84,28 @@ class WrapperConnection():
                    url: str,
                    filepath: str | Path) -> None:
         "Dowloads a file"
+        
+        logger.debug(f"Dowloading Daily Data Dump: {url}")
+        
         if not Path(filepath).suffix:
             raise ValueError(f"{filepath}: This path needs a suffix dude!")
         with self._pool_manager.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
             for chunk in file_response.stream(10**4, True):
                 file_out.write(chunk)
+        
+        logger.debug(f"Daily Data Dump located in: {filepath}")
 
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
+        url = url.format(v=self.api_version)
+        
+        logger.debug(f"Testing connection status code of: {url}")
+        
         response = self._pool_manager.request("GET", url, headers=self.headers, timeout=20)
         
         self.last_request_headers.update(response.headers)
-
         self.update_ratelimit_status(response.headers)
+        
+        logger.debug(f"{url} status code is: {response.status}")
 
         return response.status
    
@@ -109,6 +122,9 @@ class WrapperConnection():
     def update_ratelimit_status(self, response_headers: dict) -> None:
         self.ratelimit_remaining = self.get_header(response_headers, "Ratelimit-remaining")
         self.ratelimit_requests_seen = self.get_header(response_headers, "X-ratelimit-requests-seen")
+        
+        logger.info(f"Ratelimit remaining: {self.ratelimit_remaining}")
+        
         self.check_api_ratelimit()
 
     def decode_response_data(self, response: BaseHTTPResponse) -> dict[str] | None:
