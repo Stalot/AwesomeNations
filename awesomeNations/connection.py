@@ -1,7 +1,7 @@
 from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError
-from awesomeNations.awesomeTools import AwesomeParser
-from awesomeNations.awesomeTools import NationAuth
+from awesomeNations.internalTools import AwesomeParser
+from awesomeNations.internalTools import NationAuth
 from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse
 from pprint import pprint as pp

@@ -1,6 +1,6 @@
 from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customMethods import join_keys, format_key
-from awesomeNations.awesomeTools import NationAuth
+from awesomeNations.internalTools import NationAuth
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime

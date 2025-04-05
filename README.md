@@ -48,7 +48,7 @@ Let's begin with a simple example...
 from awesomeNations import AwesomeNations
 from pprint import pprint as pp # Pretty printing
 
-api = AwesomeNations("My App/1.0.0")
+api = AwesomeNations("My App/1.0.0") # Replace this User-Agent with useful info.
 nation = api.Nation("Testlandia")
 
 if nation.exists():
@@ -107,7 +107,7 @@ import os
 load_dotenv()
 password = os.environ["MY_PASSWORD"]
 
-api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+api = AwesomeNations("My application/1.0.0")
 nation = api.Nation("your nation name here!", password)
 
 data = nation.get_shards(('notices', 'ping', 'unread'))
