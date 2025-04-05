@@ -19,7 +19,7 @@ Easy, quick and **awesome**.
 
 ## References: ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
 
-I highly recommend you **dive into the NationStates documentation**. Yes, I know, it sounds as thrilling as watching paint dry... **But you really should**! Here are some handy links you might want to check out!
+Before start *cooking*, I highly recommend you **dive into documentation**. Yes, I know, it sounds as thrilling as watching paint dry... **But you really should**!
 
 - [NationStates API documentation](https://www.nationstates.net/pages/api.html)
 - [Script Rules for HTML site](https://forum.nationstates.net/viewtopic.php?p=16394966#p16394966)
@@ -27,7 +27,7 @@ I highly recommend you **dive into the NationStates documentation**. Yes, I know
 ## Summary 📚
 
 **AwesomeNations**
-- `get_api_latest_version()` -> Gets API current version;
+- `get_api_latest_version()` -> Gets API latest version;
 - `get_daily_data_dumps()` -> Dowloads daily data dumps;
 - `get_world_assembly_shards()` -> Gets world assembly shards;
 - `get_world_shards()` -> Gets world API shards.

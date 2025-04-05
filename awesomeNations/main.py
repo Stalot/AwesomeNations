@@ -304,7 +304,7 @@ class AwesomeNations():
             return response
 
 if __name__ == "__main__":
-    api = AwesomeNations("AwesomeNations/Test", request_timeout=7)
-    print(repr(api))
-    print(repr(api.Nation("testlandia")))
-    print(repr(api.Region("the pacific")))
+    api = AwesomeNations("AwesomeNations/Test")
+    print(api)
+    print(api.Nation("testlandia"))
+    print(api.Region("the pacific"))
