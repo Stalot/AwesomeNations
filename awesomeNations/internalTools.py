@@ -12,7 +12,11 @@ class NationAuth():
                  password: Optional[str] = None,
                  autologin: Optional[str] = None):
         if not any((password, autologin)):
-            raise ValueError("Authentication can't be empty, you must give a password or autologin.")
+            raise ValueError("NationAuth can't be empty, a password or autologin must be given.")
+        if password and type(password) is not str:
+            raise ValueError(f"password must be str, not {type(password).__name__}")
+        if autologin and type(autologin) is not str:
+            raise ValueError(f"autologin must be str, not {type(autologin).__name__}")
         self.crip = Criptografy()
         self.password = self.__secret__(password)
         self.autologin = self.__secret__(autologin)
@@ -92,6 +96,6 @@ class Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    auth = NationAuth("Hunterx5", "2.8645a5uj_")
+    auth = NationAuth("Hunterx")
     print(auth.password)
     print(auth.autologin)
