@@ -7,8 +7,8 @@ from awesomeNations import AwesomeNations
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-awesomeAPI = AwesomeNations("My Awesome Application")
-region = awesomeAPI.Region('The Pacific')
+api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+region = api.Region('The Pacific')
 
 def pretty_name(name: str) -> str:
     name = name.replace("_", " ").split(" ")
@@ -27,7 +27,7 @@ def pretty_rank(rank_number: str, digits: int = 2) -> str:
 def get_region_rank(censusid: int = 46, max_position: int = 10):
     api_data = region.get_shards("censusranks", scale=censusid)
     rank_data = api_data["region"]["censusranks"]["nations"]["nation"]
-    api_data = awesomeAPI.get_world_shards("censusname", scale=censusid)
+    api_data = api.get_world_shards("censusname", scale=censusid)
     census_title = api_data["world"]["census"]["text"]
 
     if max_position <= 0:

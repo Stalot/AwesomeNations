@@ -19,11 +19,11 @@ from awesomeNations import AwesomeNations
 # Economy: Powerhouse
 # Political Freedom: Excellent
 
-awesomeAPI = AwesomeNations("My Awesome Application")
+api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
 
 def search_nation():
     nation_name = str(input('Insert nation name: '))
-    nation = awesomeAPI.Nation(nation_name)
+    nation = api.Nation(nation_name)
 
     if not nation_name:
         output = r'¯\_(ツ)_/¯ Please, gimme a nation name!'
@@ -32,7 +32,7 @@ def search_nation():
         output = fr'"{nation_name}" not found!'
         return output
 
-    api_data = nation.get_public_shards()
+    api_data = nation.get_shards()
     data = api_data["nation"]
     output = f"""Name: {data["name"]}
 Full name: {data["fullname"]}

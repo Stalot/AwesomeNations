@@ -1,81 +1,109 @@
 from awesomeNations.connection import WrapperConnection, URLManager
 from awesomeNations.customMethods import join_keys, format_key
-from datetime import datetime
-from bs4 import BeautifulSoup as bs
+from awesomeNations.internalTools import NationAuth
+from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
+from datetime import datetime
+from typing import Optional
+from urllib3 import Timeout
+from typing import Literal
 from pathlib import Path
+from logging import WARNING
+import logging
+
+logger = logging.getLogger("AwesomeLogger")
+logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 wrapper = WrapperConnection()
-apiUrls = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
+url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
 
 class AwesomeNations():
     """
-    # AwesomeNations
+    # 🚩 AwesomeNations 🚩
 
-    Welcome! I'm the main class of this library and can't wait to collaborate with you! Feel free to explore my [GitHub repository](https://github.com/Stalot/AwesomeNations) and report any issues [here](https://github.com/Stalot/AwesomeNations/issues).
+    Welcome! I'm the main class of this library and can't wait to collaborate with you!
+    Feel free to explore my [GitHub repository](https://github.com/Stalot/AwesomeNations)
+    and report any issues [here](https://github.com/Stalot/AwesomeNations/issues).
 
-    ---
-
-    ## 📚 Useful References
-
-    Here are some helpful links for coding guidelines and references. Please note that these resources may change over time:
+    # 📚 Useful References 📚
+    
+    If you want to make things right, I highly recommend you to **read documentation**.
+    Yes, I know, it sounds as thrilling as watching paint dry... But you really should!
+    Here are some helpful links for coding guidelines and references. Please note that
+    these resources may change over time:
 
     - 📖 [NationStates API Documentation](https://www.nationstates.net/pages/api.html)  
     - ⚖️ [NationStates Script Rules for HTML site](https://forum.nationstates.net/viewtopic.php?p=16394966#p16394966)
     
     ---
     
-    ## ⚙️ Class Arguments
-    
-    ### user_agent: str
-    
-    Sets a User-Agent. Whenever possible, your tool should identify itself by setting the User-Agent header with relevant data.
-    - `<application name>/<version> <comments>`
-    - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
-    
-    ### session: bool
-    
-    Allow requesting using session, improving efficiency by maintaining persistent connections.
-    
-    ### request_timeout: int | tuple
+    ### user_agent:
 
-    Defines a timeout (in seconds) for requests.
+    > Sets a User-Agent. Whenever possible, your tool should identify itself by setting
+    > the User-Agent header with relevant data.
 
-    - `request_timeout: tuple = (10, 5)` -> 10 seconds for connecting, 5 seconds for reading.
-    - `request_timeout: int = 10` -> 10 seconds for both.
+    > - `<application name>/<version> <comments>`
+    > - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
     
-    ### ratelimit_sleep: bool
-    
-    This allows to automatically "sleep" if the API ratelimit is reached, prevents temporary lockouts due to excessive requests in a short span of time.
+    ### request_timeout:
 
-    ### ratelimit_reset_time: int
+    > Defines a timeout (in seconds) for requests.
+
+    > - `request_timeout: tuple = (10, 5)` -> 10 seconds for connecting, 5 seconds for reading.
+    > - `request_timeout: int = 10` -> 10 seconds for both.
     
-    Defines the reset time (in seconds) to wait when the API ratelimit is reached.
+    ### ratelimit_sleep:
     
-    ### api_version: int
+    > This allows to automatically "sleep" if the API ratelimit is reached, prevents temporary
+    > lockouts due to excessive requests in a short span of time.
+
+    ### ratelimit_reset_time:
     
-    This setting allows you to specify the NationStates API version your script expects. Since the API may update over time, adding new data or changing its format, older scripts might break if they encounter unexpected changes. By requesting a specific version number, your script can ensure it receives data in a format it understands, preventing compatibility issues.
+    > Defines the reset time (in seconds) to wait when the API ratelimit is reached.
+    
+    ### api_version:
+    
+    > This setting allows you to specify the NationStates API version your script uses.
+
+    ### log_level:
+    
+    > Sets logging log level, if None is given, disables logging.
     """
 
     def __init__(self,
-                 user_agent: str = None,
-                 session: bool = False,
+                 user_agent: str,
                  request_timeout: int | tuple = (15, 10),
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
-                 api_version: int = 12):
+                 api_version: int = 12,
+                 log_level: Optional[int] = WARNING):
+        self.user_agent: str = user_agent
+        self.request_timeout: int | tuple = request_timeout
+        self.ratelimit_sleep: bool = ratelimit_sleep
+        self.ratelimit_reset_time: int = ratelimit_reset_time
+        self.api_version: int = api_version
+        self.log_level: Optional[int] = log_level
 
-        request_headers = {
-        "User-Agent": user_agent,
+        headers: dict = {
+        "User-Agent": self.user_agent,
         "Cache-Control": "no-cache",
         }
         
-        wrapper.request_headers = request_headers
-        wrapper.session = session
-        wrapper.request_timeout = request_timeout
-        wrapper.ratelimit_sleep = ratelimit_sleep
-        wrapper.ratelimit_reset_time = ratelimit_reset_time
-        wrapper.api_version = api_version
+        wrapper.headers = headers
+        wrapper.request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout)
+        wrapper.ratelimit_sleep = self.ratelimit_sleep
+        wrapper.ratelimit_reset_time = self.ratelimit_reset_time
+        wrapper.api_version = self.api_version
+        
+        if self.log_level is None:
+            logger.disabled = True
+        elif type(self.log_level) is int:
+            logger.level = self.log_level
+        else:
+            raise ValueError(f"Invalid {type(self.log_level).__name__} '{self.log_level}', log_level must be an int (to change level) or None (to disable logging)")
+
+    def __repr__(self):
+        return f"AwesomeNations(user_agent={self.user_agent}, request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level})"
 
     def today_is_nationstates_birthday(self) -> bool:
         "Today is 11/13?"
@@ -86,15 +114,14 @@ class AwesomeNations():
             birthday = True
         return birthday
 
-    def get_nationstates_age(self) -> str:
+    def get_nationstates_age(self) -> int:
         "Current year - NationStates year of creation (NationStates was created in 2002)."
         created = 2002
         today = datetime.today().year
         age = today - created
-        result = f'Around {age-1}-{age} years old.'
-        return result
+        return age
 
-    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: str = "nation", **kwargs) -> None:
+    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region"] = "nation") -> None:
         """
         Dowloads NationStates daily data dumps.
         
@@ -102,154 +129,163 @@ class AwesomeNations():
         
         - "nation": Dowloads the nation data dump.
         - "region": Dowloads the region data dump.
-        - "cards": Dowloads the trading cards data dump, this one needs a `season_number: int`.
         """
-        nation_url = apiUrls.data_dumps_url("n")
-        region_url = apiUrls.data_dumps_url("r")
-        cards_url = apiUrls.data_dumps_url("c")
-        
-        query_parameters = {
-            "downloadformat": "gz"
-            }
+        nation_url: str = "https://www.nationstates.net/pages/nations.xml.gz"
+        region_url: str = "https://www.nationstates.net/pages/regions.xml.gz"
 
-        filepath = Path(filepath).absolute() 
         match type:
             case "nation":
-                with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(nation_url, query_parameters=query_parameters, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
+                wrapper.fetch_file(nation_url, filepath)
             case "region":
-                with open(filepath, 'wb') as file:
-                    response = wrapper.fetch_html_data(region_url, query_parameters=query_parameters, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
-            case "cards":
-                with open(filepath, 'wb') as file:
-                    cards_url = cards_url.format(season_number=kwargs.get("season_number"))
-                    response = wrapper.fetch_html_data(cards_url, query_parameters=query_parameters, stream=True)
-                    for chunk in response.iter_content(chunk_size=10 * 1024):
-                        file.write(chunk)
+                wrapper.fetch_file(region_url, filepath)
             case _:
                 raise ValueError(type)
 
-    def get_world_shards(self, shards: str | tuple | list = None, **kwargs) -> dict:
+    def get_world_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
         Gets one or more shards from the World API.
         """
-        url = apiUrls.shards_url("w").format(query=shards, params="")
-        if shards:
-            shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-            shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-            url = apiUrls.shards_url("w")
-            url = url.format(query = shards_query,
-                            params = shard_params,)
-        response = wrapper.fetch_api_data(url)
+        for kwarg in kwargs:
+            kwargs[kwarg] = join_keys(kwargs[kwarg])
+        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+        url: str = url_manager.generate_shards_url("world", shards, params)
+        response: dict = wrapper.fetch_api_data(url)
         return response
 
-    def get_world_assembly_shards(self, council_id: int, shards: str | tuple | list = None, **kwargs) -> dict:
+    def get_world_assembly_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
         Gets one or more shards from the World Assembly API.
         """
-        url = apiUrls.shards_url("wa").format(council_id=1, query=shards, params="")
-        if shards:
-            shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-            shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-            url = apiUrls.shards_url("wa")
-            url = url.format(council_id = council_id,
-                            query = shards_query,
-                            params = shard_params)
-        response = wrapper.fetch_api_data(url)
+        for kwarg in kwargs:
+            kwargs[kwarg] = join_keys(kwargs[kwarg])
+        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+        url: str = url_manager.generate_shards_url("wa",
+                                                   shards,
+                                                   params,
+                                                   council_id=kwargs["council_id"])
+        response: dict = wrapper.fetch_api_data(url)
         return response
+
+    def get_api_latest_version(self) -> int:
+        """Gets NationStates API latest version"""
+        url = "https://www.nationstates.net/cgi-bin/api.cgi?a=version"
+        latest_version: int = int(wrapper.fetch_raw_data(url))
+        return latest_version
 
     class Nation:
         """
         Class dedicated to NationStates nation API.
         """
-        def __init__(self, nation_name: str = 'testlandia') -> None:
-            self.nation_name = format_key(nation_name, False, '%20')
+        def __init__(self,
+                     nation_name: str,
+                     password: str = None,
+                     autologin: str = None) -> None:
+            self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
+            wrapper._auth = NationAuth(password, autologin) if any((password, autologin)) else None
+
+        def __repr__(self):
+            return f"Nation(nation_name={self.nation_name})"
 
         def exists(self) -> bool:
             """
             Checks if nation exists.
             """
-            url = apiUrls.standard_url("n")
-            url = url.format(nation_name=self.nation_name)
-            status_code: int = wrapper.test_api_connection(url)
-            if status_code == 200:
-                return True
-            else:
-                return False
+            url = url_manager.generate_shards_url("nation",
+                                                  None,
+                                                  None,
+                                                  nation_name=self.nation_name)
+            status_code: int = wrapper.connection_status_code(url)
+            match status_code:
+                case 200:
+                    return True
+                case 404:
+                    return False
+                case _:
+                    raise HTTPError(status_code)
 
-        def get_public_shards(self, shards: str | tuple | list = None, **kwargs) -> dict:
+        # DEPRECATED METHOD
+        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
-            Gets one or more public shards from the requested nation, returns the standard API by default.
+            # THIS METHOD IS DEPRECATED
+            ## Use ```get_shards()``` instead!
             
-            ---
+            ***
+            
+            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
             ### Standard:
             
-            A compendium of the most commonly sought information.
+            > A compendium of the most commonly sought information.
             
             ### Shards:
-            If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
+            > If you don't need most of this data, please use shards instead. Shards allow you to request
+            > exactly what you want and can be used to request data not available from the Standard API!
             """
-            url = apiUrls.standard_url("n").format(nation_name=self.nation_name)
-            if shards:
-                shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-                shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-                url = apiUrls.shards_url()
-                url = url.format(nation_name=self.nation_name,
-                                query = shards_query,
-                                params = shard_params,)
-            response = wrapper.fetch_api_data(url)
+            for kwarg in kwargs:
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("nation",
+                                                       shards,
+                                                       params,
+                                                       nation_name=self.nation_name)
+            logger.warning("get_public_shards() is deprecated.")
+            response: dict = wrapper.fetch_api_data(url)
             return response
 
-        def get_summary(self) -> dict:
+        # Replacing get_public_shards()
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
-            Gets the description of the requested nation.
-            """
-            url = f"https://www.nationstates.net/nation={self.nation_name}"
-            response = wrapper.fetch_html_data(url)
-
-            soup = bs(response.text, 'lxml')
-            div = soup.find("div", class_="nationsummary")
-            nation_summary = [p.get_text().strip() for p in div.find_all("p")]
+            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
-            summary: dict = {
-                    'description': {
-                        'society': nation_summary[0],
-                        'government': nation_summary[1],
-                        'economy': nation_summary[2],
-                        'legislation': nation_summary[3]},
-                }
-
-            return summary
+            ### Standard:
+            
+            > A compendium of the most commonly sought information.
+            
+            ### Shards:
+            > If you don't need most of this data, please use shards instead. Shards allow you to request
+            > exactly what you want and can be used to request data not available from the Standard API!
+            """
+            for kwarg in kwargs:
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("nation",
+                                                       shards,
+                                                       params,
+                                                       nation_name=self.nation_name)
+            response: dict = wrapper.fetch_api_data(url)
+            return response
 
     class Region: 
         """
         Class dedicated to NationStates region API.
         """
-        def __init__(self, region_name: str = 'The Pacific') -> None:
+        def __init__(self, region_name: str) -> None:
+            # self.pretty_name: str = prettify_string(str(region_name))
             self.region_name = format_key(region_name, False, '%20')
+        
+        def __repr__(self):
+            return f"Region(region_name={self.region_name})"
         
         def exists(self) -> bool:
             """
             Checks if region exists.
             """
-            url = apiUrls.standard_url("r")
-            url = url.format(region_name=self.region_name)
-            status_code: int = wrapper.test_api_connection(url)
-            if status_code == 200:
-                return True
-            else:
-                return False
+            url = url_manager.generate_shards_url("region",
+                                                  None,
+                                                  None,
+                                                  region_name=self.region_name)
+            status_code: int = wrapper.connection_status_code(url)
+            match status_code:
+                case 200:
+                    return True
+                case 404:
+                    return False
+                case _:
+                    raise HTTPError(status_code)
 
-        def get_shards(self, shards: str | tuple | list = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
             """
-            Get one or more shards from the requested region, returns the standard API by default.
-            
-            ---
+            Gets one or more shards from the requested region, returns the standard API if no shards provided.
             
             ### Standard:
             
@@ -258,20 +294,18 @@ class AwesomeNations():
             ### Shards:
             If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
             """
-            url = apiUrls.standard_url("r").format(region_name=self.region_name)
-            if shards:
-                shards_query = join_keys([shard for shard in shards]) if type(shards) != str else shards
-                shard_params = join_keys([f"{param}={kwargs[param]}" for param in kwargs], ";")            
-                url = apiUrls.shards_url("r")
-                url = url.format(region_name=self.region_name,
-                                query = shards_query,
-                                params = shard_params,)
-            response = wrapper.fetch_api_data(url)
+            for kwarg in kwargs:
+                kwargs[kwarg] = join_keys(kwargs[kwarg])
+            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
+            url: str = url_manager.generate_shards_url("region",
+                                                       shards,
+                                                       params,
+                                                       region_name=self.region_name)
+            response: dict = wrapper.fetch_api_data(url)
             return response
 
 if __name__ == "__main__":
-    api = AwesomeNations("AwesomeNations/0.1.0 (by: Orlys; usedBy: Orlys)")
-    nation = api.Nation("Orlys")
-    region = api.Region("Fullworthia")
-    
-    api.get_daily_data_dumps("junk/datadump.gz")
+    api = AwesomeNations("AwesomeNations/Test", log_level=0)
+    print(api)
+    print(api.Nation("testlandia").get_public_shards("name"))
+    print(api.Region("the pacific"))
