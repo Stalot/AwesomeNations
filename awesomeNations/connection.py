@@ -1,7 +1,7 @@
 from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError
 from awesomeNations.internalTools import AwesomeParser
-from awesomeNations.internalTools import NationAuth
+from awesomeNations.internalTools import _NationAuth
 from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse
 from pprint import pprint as pp
@@ -28,12 +28,13 @@ class WrapperConnection():
         self.ratelimit_remaining: int = None
         self.ratelimit_requests_seen: int = None
         self.api_version: int = api_version
+        self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
         
         self._pool_manager = urllib3.PoolManager(4,
                                                 self.headers,
                                                 retries=False)
         self.last_request_headers: dict = {}
-        self._auth: Optional[NationAuth] = None
+        self._auth: Optional[_NationAuth] = None
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
@@ -152,56 +153,5 @@ class WrapperConnection():
                 output_value = int(key_value)
         return output_value
 
-class URLManager():
-    def __init__(self, api_base_url: str):
-        self.api_base_url = api_base_url
-    
-    def generate_shards_url(self,
-                    modifier: Literal["nation", "region", "world", "wa"],
-                    shards: Optional[str | tuple[str]] = None,
-                    params: Optional[str | tuple[str]] = None,
-                    **kwargs) -> str:
-        """
-        Generates urls for shards, returns the standard API structure if no shards provided (if supported).
-        """
-        querystring: str = None
-        match modifier:
-            case "nation":
-                querystring = f"nation={kwargs["nation_name"]}&q="
-                if not shards:
-                    querystring = querystring.replace("&q=", "")
-            case "region":
-                querystring = f"region={kwargs["region_name"]}&q="
-                if not shards:
-                    querystring = querystring.replace("&q=", "")
-            case "world":
-                querystring = "q="
-                if not shards:
-                    raise ValueError(f"Shards cannot be None, World API modifier needs shards!")
-            case "wa":
-                querystring = f"wa={kwargs["council_id"]}&q="
-                if not shards:
-                    raise ValueError(f"Shards cannot be None, World Assembly API modifier needs shards!")
-            case _:
-                raise ValueError(f"{modifier} is invalid. Modifier must be nation, region, world or wa.")
-
-        shards_query: str = shards
-        shards_params: str = params
-        if shards:
-            if type(shards) != str:
-                shards_query = join_keys(shards)
-            querystring += shards_query
-        if params:
-            if type(params) != str:
-                shards_params: str = join_keys(params, ";")
-            querystring += ";" +  shards_params
-        full_url: str = self.api_base_url + "?" + querystring + "&v={v}"
-        return full_url
-
 if __name__ == "__main__":
-    headers = {"User-Agent": "AwesomeNations urllib3 test (by: Orlys; usdBy: Orlys)"}
-    wrapper = WrapperConnection(headers)
-    url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
-    
-    data = wrapper.fetch_api_data("https://www.nationstates.net/cgi-bin/api.cgi?nation=testlandia&q=capital")
-    pp(data)
+    ...

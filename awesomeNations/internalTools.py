@@ -1,12 +1,45 @@
-from awesomeNations.customMethods import format_key, string_is_number
+from awesomeNations.customMethods import format_key, string_is_number, join_keys
 from awesomeNations.exceptions import DataError
 from pprint import pprint as pp
-from typing import Optional
+from typing import Optional, Literal
 import xmltodict
 import string
 import random
 
-class NationAuth():
+class _ShardsQuery():
+    def __init__(self,
+                 api_family: tuple[str, str | None],
+                 shards: Optional[str | list[str]] = None, 
+                 params: Optional[dict[str, str | list[str]]] = None):
+        if type(api_family) is not tuple:
+            raise ValueError(f"api_family must be tuple or Nonetype, not '{type(api_family).__name__}'")
+        
+        self.api_family = api_family
+        self.query_shards = shards
+        self.query_params = params
+
+        if shards:
+            if type(shards) is not str:
+                self.query_shards = join_keys(shards)
+
+        if params and type(params) is not str:
+            for item in params:
+                if type(params[item]) is not str:
+                    params[item] = join_keys(params[item])
+            self.query_params = join_keys([f"{p}={params[p]}" for p in params], ";")
+
+    def querystring(self):
+        querystring: str = "?"
+        querystring += f"{self.api_family[0]}={self.api_family[1]}&" if self.api_family[0] != "world" else ""
+        if self.query_shards:
+            querystring += f"q={self.query_shards}"
+        else:
+            querystring = querystring.replace("&", "")
+        if self.query_params:
+            querystring += f";{self.query_params}"
+        return querystring
+
+class _NationAuth():
     """Nation authentication"""
     def __init__(self,
                  password: Optional[str] = None,
@@ -96,6 +129,5 @@ class Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    auth = NationAuth("Hunterx")
-    print(auth.password)
-    print(auth.autologin)
+    query = _ShardsQuery(("world", None), ("name", "fullname"))
+    print(query.querystring())

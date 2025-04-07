@@ -1,6 +1,6 @@
-from awesomeNations.connection import WrapperConnection, URLManager
+from awesomeNations.connection import WrapperConnection
 from awesomeNations.customMethods import join_keys, format_key
-from awesomeNations.internalTools import NationAuth
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -15,7 +15,6 @@ logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 wrapper = WrapperConnection()
-url_manager = URLManager("https://www.nationstates.net/cgi-bin/api.cgi")
 
 class AwesomeNations():
     """
@@ -145,10 +144,9 @@ class AwesomeNations():
         """
         Gets one or more shards from the World API.
         """
-        for kwarg in kwargs:
-            kwargs[kwarg] = join_keys(kwargs[kwarg])
-        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-        url: str = url_manager.generate_shards_url("world", shards, params)
+        if not shards:
+            raise ValueError("No shards provided and World API doesn't have a standard API.")
+        url = wrapper.base_url + _ShardsQuery(("world", None), shards, kwargs).querystring()
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -156,13 +154,12 @@ class AwesomeNations():
         """
         Gets one or more shards from the World Assembly API.
         """
-        for kwarg in kwargs:
-            kwargs[kwarg] = join_keys(kwargs[kwarg])
-        params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-        url: str = url_manager.generate_shards_url("wa",
-                                                   shards,
-                                                   params,
-                                                   council_id=kwargs["council_id"])
+        if not shards:
+            raise ValueError("No shards provided and World Assembly API doesn't have a standard API.")
+        council_id = kwargs["council_id"]
+        kwargs.pop("council_id")
+        url = wrapper.base_url + _ShardsQuery(("wa", council_id), shards, kwargs).querystring()
+        print(url)
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -181,7 +178,7 @@ class AwesomeNations():
                      password: str = None,
                      autologin: str = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            wrapper._auth = NationAuth(password, autologin) if any((password, autologin)) else None
+            wrapper._auth = _NationAuth(password, autologin) if any((password, autologin)) else None
 
         def __repr__(self):
             return f"Nation(nation_name={self.nation_name})"
@@ -190,10 +187,7 @@ class AwesomeNations():
             """
             Checks if nation exists.
             """
-            url = url_manager.generate_shards_url("nation",
-                                                  None,
-                                                  None,
-                                                  nation_name=self.nation_name)
+            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name)).querystring()
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:
@@ -221,13 +215,7 @@ class AwesomeNations():
             > If you don't need most of this data, please use shards instead. Shards allow you to request
             > exactly what you want and can be used to request data not available from the Standard API!
             """
-            for kwarg in kwargs:
-                kwargs[kwarg] = join_keys(kwargs[kwarg])
-            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("nation",
-                                                       shards,
-                                                       params,
-                                                       nation_name=self.nation_name)
+            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name), shards, kwargs).querystring()
             logger.warning("get_public_shards() is deprecated.")
             response: dict = wrapper.fetch_api_data(url)
             return response
@@ -245,13 +233,7 @@ class AwesomeNations():
             > If you don't need most of this data, please use shards instead. Shards allow you to request
             > exactly what you want and can be used to request data not available from the Standard API!
             """
-            for kwarg in kwargs:
-                kwargs[kwarg] = join_keys(kwargs[kwarg])
-            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("nation",
-                                                       shards,
-                                                       params,
-                                                       nation_name=self.nation_name)
+            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name), shards, kwargs).querystring()
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -270,10 +252,7 @@ class AwesomeNations():
             """
             Checks if region exists.
             """
-            url = url_manager.generate_shards_url("region",
-                                                  None,
-                                                  None,
-                                                  region_name=self.region_name)
+            url = wrapper.base_url + _ShardsQuery(("region", self.region_name)).querystring()
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:
@@ -294,18 +273,11 @@ class AwesomeNations():
             ### Shards:
             If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
             """
-            for kwarg in kwargs:
-                kwargs[kwarg] = join_keys(kwargs[kwarg])
-            params: Optional[str] = join_keys([f"{kwarg}={kwargs[kwarg]}" for kwarg in kwargs], ";") if kwargs else None
-            url: str = url_manager.generate_shards_url("region",
-                                                       shards,
-                                                       params,
-                                                       region_name=self.region_name)
+            url = wrapper.base_url + _ShardsQuery(("region", self.region_name), shards, kwargs).querystring()
             response: dict = wrapper.fetch_api_data(url)
             return response
 
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", log_level=0)
-    print(api)
-    print(api.Nation("testlandia").get_public_shards("name"))
-    print(api.Region("the pacific"))
+    data = api.get_world_shards(None)
+    print(data)
