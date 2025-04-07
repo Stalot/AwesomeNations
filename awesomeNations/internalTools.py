@@ -5,6 +5,11 @@ from typing import Optional, Literal
 import xmltodict
 import string
 import random
+import logging
+from pathlib import Path
+import urllib3
+
+logger = logging.getLogger("AwesomeLogger")
 
 class _ShardsQuery():
     def __init__(self,
@@ -39,6 +44,38 @@ class _ShardsQuery():
             querystring += f";{self.query_params}"
         return querystring
 
+class _DailyDataDumps():
+    """
+    Daily Data Dumps urls manager.
+    """
+    def __init__(self):
+        self.nation_datadump = "https://www.nationstates.net/pages/nations.xml.gz"
+        self.region_datadump = "https://www.nationstates.net/pages/regions.xml.gz"
+    
+    def get_dump(self, family: Literal["nation", "region"] = "nation"):
+        match family:
+            case "nation":
+                return self.nation_datadump
+            case "region":
+                return self.region_datadump
+            case _:
+                raise ValueError(f"Sorry, I don't know '{family}' daily data dump. Maybe you misspelled it?")
+
+    def dowload(self,
+                   url: str,
+                   filepath: str | Path) -> None:
+        "Dowloads daily data dump."
+        
+        logger.debug(f"Dowloading Daily Data Dump: {url}")
+        
+        if not Path(filepath).suffix:
+            raise ValueError(f"{filepath}: This path needs a suffix dude!")
+        with urllib3.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
+            for chunk in file_response.stream(10**4, True):
+                file_out.write(chunk)
+        
+        logger.debug(f"Daily Data Dump located in: {Path(filepath).absolute()}")
+
 class _NationAuth():
     """Nation authentication"""
     def __init__(self,
@@ -50,7 +87,7 @@ class _NationAuth():
             raise ValueError(f"password must be str, not {type(password).__name__}")
         if autologin and type(autologin) is not str:
             raise ValueError(f"autologin must be str, not {type(autologin).__name__}")
-        self.crip = Criptografy()
+        self.crip = _Criptografy()
         self.password = self.__secret__(password)
         self.autologin = self.__secret__(autologin)
         self.xpin: Optional[int] = None
@@ -71,7 +108,7 @@ class _NationAuth():
         }
         return auth_headers
 
-class AwesomeParser():
+class _AwesomeParser():
     def __init__(self):
         pass
     
@@ -98,7 +135,7 @@ class AwesomeParser():
         except (ValueError, TypeError):
             return key, value
 
-class Criptografy():
+class _Criptografy():
     "Basic substitution criptography!"
     def __init__(self):
         self.chars = " " + string.punctuation + string.digits + string.ascii_letters
@@ -129,5 +166,5 @@ class Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    query = _ShardsQuery(("world", None), ("name", "fullname"))
-    print(query.querystring())
+    dumps = _DailyDataDumps()
+    print(dumps.get_dump("region"))

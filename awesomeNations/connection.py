@@ -1,6 +1,6 @@
 from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError
-from awesomeNations.internalTools import AwesomeParser
+from awesomeNations.internalTools import _AwesomeParser
 from awesomeNations.internalTools import _NationAuth
 from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse
@@ -12,9 +12,9 @@ import time
 
 logger = logging.getLogger("AwesomeLogger")
 
-parser = AwesomeParser()
+parser = _AwesomeParser()
 
-class WrapperConnection():
+class _WrapperConnection():
     def __init__(self,
                  headers: dict = None,
                  ratelimit_sleep: bool = True,
@@ -80,21 +80,6 @@ class WrapperConnection():
         self.update_ratelimit_status(response.headers)
         
         return self.decode_response_data(response)["data"].strip()
-
-    def fetch_file(self,
-                   url: str,
-                   filepath: str | Path) -> None:
-        "Dowloads a file"
-        
-        logger.debug(f"Dowloading Daily Data Dump: {url}")
-        
-        if not Path(filepath).suffix:
-            raise ValueError(f"{filepath}: This path needs a suffix dude!")
-        with self._pool_manager.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
-            for chunk in file_response.stream(10**4, True):
-                file_out.write(chunk)
-        
-        logger.debug(f"Daily Data Dump located in: {filepath}")
 
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
         url = url.format(v=self.api_version)

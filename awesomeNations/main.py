@@ -1,6 +1,6 @@
-from awesomeNations.connection import WrapperConnection
+from awesomeNations.connection import _WrapperConnection
 from awesomeNations.customMethods import join_keys, format_key
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -8,13 +8,13 @@ from typing import Optional
 from urllib3 import Timeout
 from typing import Literal
 from pathlib import Path
-from logging import WARNING
+from logging import WARNING, DEBUG
 import logging
 
 logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
-wrapper = WrapperConnection()
+wrapper = _WrapperConnection()
 
 class AwesomeNations():
     """
@@ -129,16 +129,8 @@ class AwesomeNations():
         - "nation": Dowloads the nation data dump.
         - "region": Dowloads the region data dump.
         """
-        nation_url: str = "https://www.nationstates.net/pages/nations.xml.gz"
-        region_url: str = "https://www.nationstates.net/pages/regions.xml.gz"
-
-        match type:
-            case "nation":
-                wrapper.fetch_file(nation_url, filepath)
-            case "region":
-                wrapper.fetch_file(region_url, filepath)
-            case _:
-                raise ValueError(type)
+        dumps = _DailyDataDumps()
+        return dumps.dowload(dumps.get_dump(type), filepath)
 
     def get_world_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
         """
@@ -278,6 +270,7 @@ class AwesomeNations():
             return response
 
 if __name__ == "__main__":
-    api = AwesomeNations("AwesomeNations/Test", log_level=0)
-    data = api.get_world_shards(None)
-    print(data)
+    api = AwesomeNations("AwesomeNations/Test", log_level=DEBUG)
+    #data = api.Nation("orlys").get_shards(["fullname", "leader"])
+    #print(data)
+    api.get_daily_data_dumps("junk/nation_dump.gz", "nation")
