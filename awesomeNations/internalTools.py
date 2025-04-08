@@ -17,7 +17,7 @@ class _ShardsQuery():
                  shards: Optional[str | list[str]] = None, 
                  params: Optional[dict[str, str | list[str]]] = None):
         if type(api_family) is not tuple:
-            raise ValueError(f"api_family must be tuple or Nonetype, not '{type(api_family).__name__}'")
+            raise ValueError(f"api_family must be tuple, not '{type(api_family).__name__}'")
         
         self.api_family = api_family
         self.query_shards = shards
@@ -108,6 +108,37 @@ class _NationAuth():
         }
         return auth_headers
 
+class _PrivateCommand():
+    def __init__(self,
+                 nation_name: str,
+                 command: str, 
+                 params: Optional[dict[str, str | list[str]]]):
+        if type(command) is not str:
+            raise ValueError(f"command must be str, not '{type(command).__name__}'")
+        
+        self.nation_name = nation_name
+        self.command_query = command
+        self.command_params = params
+
+        if type(params) is not str:
+            for item in params:
+                if type(params[item]) is not str:
+                    params[item] = join_keys(params[item])
+            self.command_params = join_keys([f"{p}={params[p]}" for p in params], "&")
+
+    def command(self,
+                        mode: Literal["prepare", "execute"] = "prepare",
+                        token: str = None):
+        command_url = self._querystring() + f"&mode={mode}"
+        command_url += f"&token={token}" if token else ""
+        return command_url
+
+    def _querystring(self):
+        querystring: str = "?"
+        querystring += f"nation={self.nation_name}&c={self.command_query}"
+        querystring += f"&{self.command_params}"
+        return querystring.lower()
+
 class _AwesomeParser():
     def __init__(self):
         pass
@@ -166,5 +197,4 @@ class _Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    dumps = _DailyDataDumps()
-    print(dumps.get_dump("region"))
+    ...

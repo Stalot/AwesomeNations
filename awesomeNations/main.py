@@ -1,6 +1,6 @@
 from awesomeNations.connection import _WrapperConnection
-from awesomeNations.customMethods import join_keys, format_key
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps
+from awesomeNations.customMethods import join_keys, format_key, generate_epoch_timestamp
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -229,6 +229,33 @@ class AwesomeNations():
             response: dict = wrapper.fetch_api_data(url)
             return response
 
+        def execute_command(self, c: str, **kwargs) -> None:
+            """
+            # BETA
+            Executes private commands.
+            """
+            if len(kwargs) < 1:
+                raise ValueError("Private commands need extra parameters.")
+            command = _PrivateCommand(self.nation_name,
+                                      c,
+                                      kwargs)
+            logger.info(f"Preparing private command: {c}...")
+            
+            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("prepare"))
+            prepare_status: bool = True if prepare_response["nation"].get("success") else False
+            if prepare_status:
+                token: str | None = prepare_response.get("nation").get("success")
+                
+                logger.info(f"Executing private command: {c}...")
+                
+                execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("execute", token))
+                execute_status: bool = True if execute_response["nation"].get("success") else False
+                if not execute_status:
+                    raise ValueError(f"Could not execute private command: {execute_response["nation"]["error"]}")
+                logger.info(f"Private command complete: {execute_response["nation"]["success"]}")
+                return None
+            raise ValueError(f"Could not prepare private command for execution: {prepare_response["nation"]["error"]}")
+
     class Region: 
         """
         Class dedicated to NationStates region API.
@@ -271,6 +298,4 @@ class AwesomeNations():
 
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", log_level=DEBUG)
-    #data = api.Nation("orlys").get_shards(["fullname", "leader"])
-    #print(data)
-    api.get_daily_data_dumps("junk/nation_dump.gz", "nation")
+    nation = api.Nation("Orlys")
