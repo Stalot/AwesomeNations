@@ -116,6 +116,8 @@ class _PrivateCommand():
         if type(command) is not str:
             raise ValueError(f"command must be str, not '{type(command).__name__}'")
         
+        self.not_prepare = ["issue"] # Commands that don't need preparing.
+        
         self.nation_name = nation_name
         self.command_query = command
         self.command_params = params

@@ -108,9 +108,6 @@ class _WrapperConnection():
     def update_ratelimit_status(self, response_headers: dict) -> None:
         self.ratelimit_remaining = self.get_header(response_headers, "Ratelimit-remaining")
         self.ratelimit_requests_seen = self.get_header(response_headers, "X-ratelimit-requests-seen")
-        
-        logger.info(f"Ratelimit remaining: {self.ratelimit_remaining}")
-        
         self.check_api_ratelimit()
 
     def decode_response_data(self, response: BaseHTTPResponse) -> dict[str] | None:
