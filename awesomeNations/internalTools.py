@@ -112,15 +112,20 @@ class _PrivateCommand():
     def __init__(self,
                  nation_name: str,
                  command: str, 
-                 params: Optional[dict[str, str | list[str]]]):
-        if type(command) is not str:
-            raise ValueError(f"command must be str, not '{type(command).__name__}'")
-        
+                 params: Optional[dict[str, str | list[str]]]):        
+        self.valid = ["issue", "giftcard", "dispatch", "rmbpost"]
         self.not_prepare = ["issue"] # Commands that don't need preparing.
         
         self.nation_name = nation_name
         self.command_query = command
         self.command_params = params
+        
+        if type(command) is not str:
+            raise ValueError(f"command must be str, not '{type(command).__name__}'")
+        if command not in self.valid:
+            raise ValueError(f"Not found a private command called '{command}'.")
+        if len(params) < 1:
+            raise ValueError("Private commands need extra parameters.")
 
         if type(params) is not str:
             for item in params:

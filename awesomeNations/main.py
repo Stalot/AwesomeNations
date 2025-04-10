@@ -234,33 +234,19 @@ class AwesomeNations():
             # BETA
             Executes private commands.
             """
-            if len(kwargs) < 1:
-                raise ValueError("Private commands need extra parameters.")
             command = _PrivateCommand(self.nation_name,
                                       c,
                                       kwargs)
-            
-            error_reason: str = "Unknown reason."
             token: str | None = None
             if not c in command.not_prepare:
-                logger.info(f"Preparing private command: '{c}'...")
-                
+                logger.info(f"Preparing private command: '{c}'...") 
                 prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("prepare"))
-                prepare_status: bool = True if prepare_response["nation"].get("success") else False
-                if prepare_status:
-                    token = prepare_response.get("nation").get("success")
-                else:
-                    error_reason = prepare_response["nation"]["error"] if prepare_response["nation"].get("error") else error_reason
-                    raise ValueError(f"Could not prepare private command for execution: {error_reason}")
+                token = prepare_response.get("nation").get("success")
+                if not token:
+                    return prepare_response
     
             logger.info(f"Executing private command: '{c}'...")
-                
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("execute", token))
-            execute_status: bool = False if execute_response["nation"].get("error") else True
-            if not execute_status:
-                error_reason = execute_response["nation"]["error"] if execute_response["nation"].get("error") else error_reason
-                raise ValueError(f"Could not execute private command: {error_reason}")
-            logger.info(f"Private command complete.")
             return execute_response
 
     class Region: 
