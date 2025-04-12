@@ -17,9 +17,10 @@ parser = _AwesomeParser()
 class _WrapperConnection():
     def __init__(self,
                  headers: dict = None,
-                 ratelimit_sleep: bool = True,
-                 ratelimit_reset_time: int = 30,
-                 api_version: int = 12,
+                 ratelimit_sleep: bool = None,
+                 ratelimit_reset_time: int = None,
+                 api_version: int = None,
+                 allow_beta: bool = None
                  ):
         self.headers: dict = headers
         self.request_timeout: int | tuple = 10
@@ -28,6 +29,7 @@ class _WrapperConnection():
         self.ratelimit_remaining: int = None
         self.ratelimit_requests_seen: int = None
         self.api_version: int = api_version
+        self.allow_beta: bool = allow_beta
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
         
         self._pool_manager = urllib3.PoolManager(4,

@@ -75,13 +75,15 @@ class AwesomeNations():
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
                  api_version: int = 12,
-                 log_level: Optional[int] = WARNING):
+                 log_level: Optional[int] = WARNING,
+                 allow_beta: bool = False):
         self.user_agent: str = user_agent
         self.request_timeout: int | tuple = request_timeout
         self.ratelimit_sleep: bool = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
         self.api_version: int = api_version
         self.log_level: Optional[int] = log_level
+        self.allow_beta = allow_beta
 
         headers: dict = {
         "User-Agent": self.user_agent,
@@ -93,6 +95,7 @@ class AwesomeNations():
         wrapper.ratelimit_sleep = self.ratelimit_sleep
         wrapper.ratelimit_reset_time = self.ratelimit_reset_time
         wrapper.api_version = self.api_version
+        wrapper.allow_beta = self.allow_beta
         
         if self.log_level is None:
             logger.disabled = True
@@ -102,7 +105,7 @@ class AwesomeNations():
             raise ValueError(f"Invalid {type(self.log_level).__name__} '{self.log_level}', log_level must be an int (to change level) or None (to disable logging)")
 
     def __repr__(self):
-        return f"AwesomeNations(user_agent={self.user_agent}, request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level})"
+        return f"AwesomeNations(user_agent={self.user_agent}, request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level}, allow_beta={self.allow_beta})"
 
     def today_is_nationstates_birthday(self) -> bool:
         "Today is 11/13?"
@@ -229,14 +232,15 @@ class AwesomeNations():
             response: dict = wrapper.fetch_api_data(url)
             return response
 
-        def execute_command(self, c: str, **kwargs) -> dict[str, Any]:
+        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, Any]:
             """
             # BETA
             Executes private commands.
             """
             command = _PrivateCommand(self.nation_name,
                                       c,
-                                      kwargs)
+                                      kwargs,
+                                      wrapper.allow_beta)
             token: str | None = None
             if not c in command.not_prepare:
                 logger.info(f"Preparing private command: '{c}'...") 
@@ -247,6 +251,54 @@ class AwesomeNations():
     
             logger.info(f"Executing private command: '{c}'...")
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("execute", token))
+            return execute_response
+
+        def dispatch(self,
+                     action: Literal["add", "edit", "remove"],
+                     id: Optional[int] = None,
+                     title: Optional[str] = None,
+                     text: Optional[str] = None,
+                     category: int = None,
+                     subcategory: int = None) -> dict[str, dict]:
+            """
+            # BETA:
+            Currently in development. Subject to change without warning.
+            """            
+            if not action == "add" and not id:
+                raise ValueError(f"action '{action}' needs a valid dispatch id!")
+            if action == "add" or action == "edit" and not all((title, text, category, subcategory)):
+                raise ValueError(f"action '{action}' needs a valid title, text, category and subcategory.")
+
+            if category and not type(category) == int:
+                raise ValueError(f"category must be int, not type '{type(category).__name__}'.")
+            if subcategory and not type(subcategory) == int:
+                raise ValueError(f"subcategory must be int, not type '{type(subcategory).__name__}'.")
+            
+            query_params = {
+                "dispatchid": id,
+                "dispatch": action,
+                "title": title.replace(" ", "%20") if title else title,
+                "text": text.replace(" ", "%20") if text else text,
+                "category": category,
+                "subcategory": subcategory
+            }
+            for key, value in list(query_params.items()):
+                if not value:
+                    query_params.pop(key)
+            
+            c = _PrivateCommand(self.nation_name, "dispatch", query_params, wrapper.allow_beta)
+
+            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
+            token = prepare_response.get("nation").get("success")
+            
+            if not token:
+                raise ValueError(prepare_response["nation"]["error"])
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
+            
+            if execute_response["nation"].get("error"):
+                raise ValueError(execute_response["nation"]["error"])
+            
             return execute_response
 
     class Region: 
