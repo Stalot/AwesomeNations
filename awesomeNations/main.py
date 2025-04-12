@@ -10,6 +10,7 @@ from typing import Literal, Any
 from pathlib import Path
 from logging import WARNING, DEBUG
 import logging
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
@@ -263,6 +264,10 @@ class AwesomeNations():
             """
             # BETA:
             Currently in development. Subject to change without warning.
+            
+            ---
+            
+            Creates, edits and deletes dispatches.
             """            
             if not action == "add" and not id:
                 raise ValueError(f"action '{action}' needs a valid dispatch id!")
@@ -300,6 +305,43 @@ class AwesomeNations():
                 raise ValueError(execute_response["nation"]["error"])
             
             return execute_response
+
+        def rmbpost(self,
+                     region: str,
+                     text: str) -> dict[str, dict]:
+            """
+            # BETA:
+            Currently in development. Subject to change without warning.
+            
+            ---
+            
+            ...
+            """                        
+            query_params = {
+                "nation": self.nation_name,
+                "region": region,
+                "text": text.replace(" ", "%20") if text else text,
+            }
+            
+            c = _PrivateCommand(self.nation_name, "rmbpost", query_params, wrapper.allow_beta)
+
+            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
+            token = prepare_response.get("nation").get("success")
+            
+            if not token:
+                raise ValueError(prepare_response["nation"]["error"])
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
+            
+            if execute_response["nation"].get("error"):
+                raise ValueError(execute_response["nation"]["error"])
+            
+            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
+            return {
+                "post": {
+                    "href": soup.find("a")["href"]
+                }
+            }
 
     class Region: 
         """
