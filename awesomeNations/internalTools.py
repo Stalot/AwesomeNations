@@ -22,6 +22,14 @@ class _ShardsQuery():
         self.api_family = api_family
         self.query_shards = shards
         self.query_params = params
+        self._valid_shards = {
+            "nation": ['admirable', 'admirables', 'animal', 'animaltrait', 'answered', 'banner*', 'banners*', 'capital', 'category', 'census**', 'crime', 'currency', 'customleader', 'customcapital', 'customreligion', 'dbid', 'deaths', 'demonym', 'demonym2', 'demonym2plural', 'dispatches', 'dispatchlist', 'endorsements', 'factbooks', 'factbooklist', 'firstlogin', 'flag', 'founded', 'foundedtime', 'freedom', 'fullname', 'gavote', 'gdp', 'govt', 'govtdesc', 'govtpriority', 'happenings', 'income', 'industrydesc', 'influence', 'influencenum', 'lastactivity', 'lastlogin', 'leader', 'legislation', 'majorindustry', 'motto', 'name', 'notable', 'notables', 'nstats', 'policies', 'poorest', 'population', 'publicsector', 'rcensus', 'region', 'religion', 'richest', 'scvote', 'sectors', 'sensibilities', 'tax', 'tgcanrecruit', 'tgcancampaign', 'type', 'wa', 'wabadges', 'wcensus', 'zombie'],
+            "region": ['banlist', 'banner', 'bannerby', 'bannerurl', 'census', 'censusranks', 'dbid', 'delegate', 'delegateauth', 'delegatevotes', 'dispatches', 'embassies', 'embassyrmb', 'factbook', 'flag', 'founded', 'foundedtime', 'founder', 'frontier', 'gavote', 'governor', 'governortitle', 'happenings', 'history', 'lastupdate', 'lastmajorupdate', 'lastminorupdate', 'magnetism', 'messages', 'name', 'nations', 'numnations', 'wanations', 'numwanations', 'officers', 'poll', 'power', 'recruiters', 'scvote', 'tags', 'wabadges', 'zombie'],
+            "world": ['banner', 'census', 'censusid', 'censusdesc', 'censusname', 'censusranks', 'censusscale', 'censustitle', 'dispatch', 'dispatchlist', 'faction', 'factions', 'featuredregion', 'happenings', 'lasteventid', 'nations', 'newnations', 'newnationdetails', 'numnations', 'numregions', 'poll', 'regions', 'regionsbytag', 'tgqueue'],
+            "wa": ['numnations', 'numdelegates', 'delegates', 'members', 'happenings', 'proposals', 'resolution', 'voters', 'votetrack', 'dellog', 'delvotes', 'lastresolution']
+        }
+        
+        self._validate_shards(self.query_shards) # Checks if shard(s) exists, if not, raises ValueError.
 
         if shards:
             if type(shards) is not str:
@@ -43,6 +51,21 @@ class _ShardsQuery():
         if self.query_params:
             querystring += f";{self.query_params}"
         return querystring
+
+    def _validate_shards(self, shards: str | list[str]) -> None:
+        valid = self._valid_shards[self.api_family[0]]
+        if type(shards) == str:
+            if not shards in valid:
+                raise ValueError(f"Shard '{shards}' not found in {self.api_family[0].capitalize()} API family.")
+        elif type(shards) == list or type(shards) == tuple:
+            for shard in shards:
+                print(shard)
+                if not shard in valid:
+                    print("Based")
+                    raise ValueError(f"Shard '{shard}' not found in {self.api_family[0].capitalize()} API family.")
+        else:
+            raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
+                
 
 class _DailyDataDumps():
     """
@@ -166,5 +189,5 @@ class _Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    dumps = _DailyDataDumps()
-    print(dumps.get_dump("region"))
+    shard_query = _ShardsQuery(("world", None), ("censusranks**"))
+    print(shard_query.querystring())
