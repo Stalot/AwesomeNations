@@ -143,6 +143,7 @@ class _PrivateCommand():
                         token: str = None):
         command_url = self._querystring() + f"&mode={mode}"
         command_url += f"&token={token}" if token else ""
+        command_url += "&v={v}"
         return command_url
 
     def _querystring(self):

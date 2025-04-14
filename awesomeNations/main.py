@@ -235,7 +235,6 @@ class AwesomeNations():
 
         def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, Any]:
             """
-            # BETA
             Executes private commands.
             """
             command = _PrivateCommand(self.nation_name,
@@ -259,8 +258,8 @@ class AwesomeNations():
                      id: Optional[int] = None,
                      title: Optional[str] = None,
                      text: Optional[str] = None,
-                     category: int = None,
-                     subcategory: int = None) -> dict[str, dict]:
+                     category: Optional[int] = None,
+                     subcategory: Optional[int] = None) -> dict[str, dict]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -268,10 +267,10 @@ class AwesomeNations():
             ---
             
             Creates, edits and deletes dispatches.
-            """            
+            """
             if not action == "add" and not id:
                 raise ValueError(f"action '{action}' needs a valid dispatch id!")
-            if action == "add" or action == "edit" and not all((title, text, category, subcategory)):
+            if (action == "add" or action == "edit") and not all((title, text, category, subcategory)):
                 raise ValueError(f"action '{action}' needs a valid title, text, category and subcategory.")
 
             if category and not type(category) == int:
@@ -304,7 +303,15 @@ class AwesomeNations():
             if execute_response["nation"].get("error"):
                 raise ValueError(execute_response["nation"]["error"])
             
-            return execute_response
+            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
+            return {
+                "nation": {
+                    "id": execute_response["nation"]["id"],
+                    "dispatch": {
+                        "href": soup.find("a")["href"]
+                    }   
+                }
+            }
 
         def rmbpost(self,
                      region: str,
@@ -315,11 +322,11 @@ class AwesomeNations():
             
             ---
             
-            ...
+            Post to a regional RMB.
             """                        
             query_params = {
                 "nation": self.nation_name,
-                "region": region,
+                "region": format_key(region, replace_empty="%20"),
                 "text": text.replace(" ", "%20") if text else text,
             }
             
@@ -338,8 +345,12 @@ class AwesomeNations():
             
             soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
             return {
-                "post": {
-                    "href": soup.find("a")["href"]
+                "nation": {
+                    "id": execute_response["nation"]["id"],
+                    "post": {
+                        "region": format_key(region, replace_empty="_"),
+                        "href": soup.find("a")["href"]
+                    }   
                 }
             }
 
