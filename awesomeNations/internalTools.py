@@ -17,7 +17,7 @@ class _ShardsQuery():
                  shards: Optional[str | list[str]] = None, 
                  params: Optional[dict[str, str | list[str]]] = None):
         if type(api_family) is not tuple:
-            raise ValueError(f"api_family must be tuple or Nonetype, not '{type(api_family).__name__}'")
+            raise ValueError(f"api_family must be tuple, not '{type(api_family).__name__}'")
         
         self.api_family = api_family
         self.query_shards = shards
@@ -130,6 +130,50 @@ class _NationAuth():
             "X-Pin": self.xpin if self.xpin else ""
         }
         return auth_headers
+
+class _PrivateCommand():
+    def __init__(self,
+                 nation_name: str,
+                 command: str, 
+                 params: Optional[dict[str, str | list[str]]],
+                 allow_beta: bool = False):        
+        self.valid = ["issue", "giftcard", "dispatch", "rmbpost"]
+        self.not_prepare = ["issue"] # Commands that don't need preparing.
+        self.beta_commands = ["dispatch", "rmbpost", "giftcard"] # Commands still in beta (under development).
+        
+        if command in self.beta_commands and not allow_beta:
+            raise ValueError(f"Command '{command}' is a beta resource, to disable this exception, set allow_beta to True")
+        
+        self.nation_name = nation_name
+        self.command_query = command
+        self.command_params = params
+        
+        if type(command) is not str:
+            raise ValueError(f"command must be str, not '{type(command).__name__}'")
+        if command not in self.valid:
+            raise ValueError(f"Not found a private command called '{command}'.")
+        if len(params) < 1:
+            raise ValueError("Private commands need extra parameters.")
+
+        if type(params) is not str:
+            for item in params:
+                if type(params[item]) is not str:
+                    params[item] = join_keys(params[item])
+            self.command_params = join_keys([f"{p}={params[p]}" for p in params], "&")
+
+    def command(self,
+                        mode: Literal["prepare", "execute"] = "prepare",
+                        token: str = None):
+        command_url = self._querystring() + f"&mode={mode}"
+        command_url += f"&token={token}" if token else ""
+        command_url += "&v={v}"
+        return command_url
+
+    def _querystring(self):
+        querystring: str = "?"
+        querystring += f"nation={self.nation_name}&c={self.command_query}"
+        querystring += f"&{self.command_params}"
+        return querystring
 
 class _AwesomeParser():
     def __init__(self):

@@ -25,11 +25,13 @@ def format_key(string: str = None, uppercase: bool = False, replace_empty: str =
                 if not char.isalpha() and not char.isspace():
                     string = string.replace(char, '')
 
-        if not uppercase:
+        if uppercase == False:
             string = string.lower()
-        else:
+        elif uppercase == True:
             string = string.upper()
-
+        else:
+            raise ValueError(f"uppercase must be bool or NoneType, not '{type(uppercase).__name__}'.")
+                
         if replace_empty:
             string = string.replace(' ', replace_empty)
 
