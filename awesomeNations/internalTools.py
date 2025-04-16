@@ -50,6 +50,7 @@ class _ShardsQuery():
             querystring = querystring.replace("&", "")
         if self.query_params:
             querystring += f";{self.query_params}"
+        querystring += "&v={v}"
         return querystring
 
     def _validate_shards(self, shards: str | list[str]) -> None:
@@ -61,12 +62,10 @@ class _ShardsQuery():
             for shard in shards:
                 print(shard)
                 if not shard in valid:
-                    print("Based")
                     raise ValueError(f"Shard '{shard}' not found in {self.api_family[0].capitalize()} API family.")
         else:
             raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
                 
-
 class _DailyDataDumps():
     """
     Daily Data Dumps urls manager.
