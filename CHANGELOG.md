@@ -4,7 +4,8 @@
 
 # </> 2.1.0 </>
 
-...
+- Private commands
+- Shard validation, to prevent user from requesting shards that don't exist.
 
 # </> 2.0.0 </>
 
@@ -12,20 +13,20 @@
 - **AwesomeNations** `get_daily_data_dumps()` now only accepts nation or region daily data dumps;
 - **AwesomeNations** `get_nationstates_age()` now returns an int value.
 
-## Bug fixes
+Bug fixes:
 
 - Problem while processing some numbers in XML response;
 - Decoding error with certain API versions.
 
-## Deprecated methods
+Deprecated methods:
 
 - **Nation** `get_public_shards()` is deprecated and will be removed in next versions, use `get_shards()` instead.
 
-## New methods
+New methods:
 
 - **AwesomeNations** `get_api_latest_version()` gets API latest version.
 
-## Removed methods
+Removed methods:
 
 - **Nation** `get_summary()`.
 
@@ -34,7 +35,7 @@
 - Internal structure adapted from major **web scrapping** to **API wrapping**, this change was made to improve **efficiency** and better align with NationStates script rules;
 - Documentation improved.
 
-## New methods
+New methods:
 
 - **AwesomeNations** `get_daily_data_dumps()`;
 - **AwesomeNations** `get_world_shards()`;
@@ -43,12 +44,12 @@
 - **Nation** `get_public_shards()`;
 - **Region** `get_shards()`.
 
-## Modified methods
+Modified methods:
 
 - **AwesomeNations** `nationStates_birthday()` was renamed to `today_is_nationstates_birthday()`;
 - **AwesomeNations** `nationStates_age()` was renamed to `get_nationstates_age()`.
 
-## Removed methods
+Removed methods:
 
 - **Nation** `get_overview()`;
 - **Nation** `get_activity()`;
