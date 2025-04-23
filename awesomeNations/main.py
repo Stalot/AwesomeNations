@@ -1,11 +1,10 @@
 from awesomeNations.connection import _WrapperConnection
 from awesomeNations.customMethods import join_keys, format_key, generate_epoch_timestamp
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand, _Secret
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
 from typing import Optional
-from urllib3 import Timeout
 from typing import Literal, Any
 from pathlib import Path
 from logging import WARNING, DEBUG
@@ -91,12 +90,21 @@ class AwesomeNations():
         "Cache-Control": "no-cache",
         }
         
-        wrapper.headers = headers
-        wrapper.request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout)
-        wrapper.ratelimit_sleep = self.ratelimit_sleep
-        wrapper.ratelimit_reset_time = self.ratelimit_reset_time
-        wrapper.api_version = self.api_version
-        wrapper.allow_beta = self.allow_beta
+        #wrapper.headers = headers
+        #wrapper.request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout)
+        #wrapper.ratelimit_sleep = self.ratelimit_sleep
+        #wrapper.ratelimit_reset_time = self.ratelimit_reset_time
+        #wrapper.api_version = self.api_version
+        #wrapper.allow_beta = self.allow_beta
+        
+        wrapper.setup(
+            _headers=headers,
+            _request_timeout=self.request_timeout,
+            _ratelimit_sleep=self.ratelimit_sleep,
+            _ratelimit_reset_time=self.ratelimit_reset_time,
+            _api_version=self.api_version,
+            _allow_beta=self.allow_beta,
+        )
         
         if self.log_level is None:
             logger.disabled = True
@@ -174,10 +182,29 @@ class AwesomeNations():
                      password: str = None,
                      autologin: str = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            wrapper._auth = _NationAuth(password, autologin) if any((password, autologin)) else None
+            self.password: _Secret = _Secret(password)
+            self.autologin: _Secret = _Secret(autologin)
 
         def __repr__(self):
-            return f"Nation(nation_name={self.nation_name})"
+            return f"Nation(nation_name={self.nation_name}, password={self.password}, autologin={self.autologin})"
+
+        def __getattribute__(self, name):
+            try:
+                password = super().__getattribute__("password")
+                autologin = super().__getattribute__("autologin")
+                if any(password, autologin):
+                    auth = _NationAuth(_Secret(password), _Secret(autologin))
+                    setattr(wrapper, '_auth', auth)
+            except Exception as e:
+                logger.debug(f"Error while getting password or autologin: {e}")
+            finally:
+                return super().__getattribute__(name)
+
+        def set_auth(self, password: str = None, autologin: str = None):
+            self.password = _Secret(password)
+            self.autologin = _Secret(autologin)
+            new_auth = _NationAuth(self.password, self.autologin)
+            setattr(wrapper, '_auth', new_auth)
 
         def exists(self) -> bool:
             """
@@ -240,7 +267,7 @@ class AwesomeNations():
             command = _PrivateCommand(self.nation_name,
                                       c,
                                       kwargs,
-                                      wrapper.allow_beta)
+                                      wrapper._allow_beta)
             token: str | None = None
             if not c in command.not_prepare:
                 logger.info(f"Preparing private command: '{c}'...") 
@@ -290,7 +317,7 @@ class AwesomeNations():
                 if not value:
                     query_params.pop(key)
             
-            c = _PrivateCommand(self.nation_name, "dispatch", query_params, wrapper.allow_beta)
+            c = _PrivateCommand(self.nation_name, "dispatch", query_params, wrapper._allow_beta)
 
             prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
             token = prepare_response.get("nation").get("success")
@@ -303,15 +330,7 @@ class AwesomeNations():
             if execute_response["nation"].get("error"):
                 raise ValueError(execute_response["nation"]["error"])
             
-            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
-            return {
-                "nation": {
-                    "id": execute_response["nation"]["id"],
-                    "dispatch": {
-                        "href": soup.find("a")["href"]
-                    }   
-                }
-            }
+            return execute_response
 
         def rmbpost(self,
                      region: str,
@@ -330,7 +349,7 @@ class AwesomeNations():
                 "text": text.replace(" ", "%20") if text else text,
             }
             
-            c = _PrivateCommand(self.nation_name, "rmbpost", query_params, wrapper.allow_beta)
+            c = _PrivateCommand(self.nation_name, "rmbpost", query_params, wrapper._allow_beta)
 
             prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
             token = prepare_response.get("nation").get("success")
@@ -343,16 +362,7 @@ class AwesomeNations():
             if execute_response["nation"].get("error"):
                 raise ValueError(execute_response["nation"]["error"])
             
-            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
-            return {
-                "nation": {
-                    "id": execute_response["nation"]["id"],
-                    "post": {
-                        "region": format_key(region, replace_empty="_"),
-                        "href": soup.find("a")["href"]
-                    }   
-                }
-            }
+            return execute_response
 
     class Region: 
         """
