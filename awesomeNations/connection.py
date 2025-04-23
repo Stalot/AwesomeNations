@@ -107,7 +107,7 @@ class _WrapperConnection():
         return output_value
 
     def _update_auth(self, response_headers: Optional[dict[str, Any]]= None) -> None:
-        x_pin_header: int | None = self.get_header(response_headers, "X-Pin") if response_headers else None
+        x_pin_header: int | None = response_headers.get("X-Pin") if response_headers else None
         
         # Updates self._auth X-Pin if necessary (for quick sucessive requests):
         if self._auth:

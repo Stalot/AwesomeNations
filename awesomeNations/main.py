@@ -192,7 +192,7 @@ class AwesomeNations():
             try:
                 password = super().__getattribute__("password")
                 autologin = super().__getattribute__("autologin")
-                if any(password, autologin):
+                if any((password, autologin)):
                     auth = _NationAuth(_Secret(password), _Secret(autologin))
                     setattr(wrapper, '_auth', auth)
             except Exception as e:
