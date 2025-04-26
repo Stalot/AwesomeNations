@@ -1,6 +1,6 @@
 from awesomeNations.connection import _WrapperConnection
 from awesomeNations.customMethods import join_keys, format_key, generate_epoch_timestamp
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand, _Secret
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand, _Secret, _AwesomeParser
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -16,6 +16,7 @@ logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 wrapper = _WrapperConnection()
+parser = _AwesomeParser()
 
 class AwesomeNations():
     """
@@ -312,22 +313,15 @@ class AwesomeNations():
             token = prepare_response.get("nation").get("success")
             
             if not token:
-                raise ValueError(prepare_response["nation"]["error"])
+                raise ValueError(parser.parse_html_in_string(prepare_response["nation"]["error"]))
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
             if execute_response["nation"].get("error"):
-                raise ValueError(execute_response["nation"]["error"])
+                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
             
-            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
-            return {
-                "nation": {
-                    "id": execute_response["nation"]["id"],
-                    "dispatch": {
-                        "href": soup.find("a")["href"]
-                    }   
-                }
-            }
+            #soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
+            return execute_response
 
         def rmbpost(self,
                      region: str,
@@ -352,23 +346,15 @@ class AwesomeNations():
             token = prepare_response.get("nation").get("success")
             
             if not token:
-                raise ValueError(prepare_response["nation"]["error"])
+                raise ValueError(parser.parse_html_in_string(prepare_response["nation"]["error"]))
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
             if execute_response["nation"].get("error"):
-                raise ValueError(execute_response["nation"]["error"])
+                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
             
-            soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
-            return {
-                "nation": {
-                    "id": execute_response["nation"]["id"],
-                    "post": {
-                        "region": format_key(region, replace_empty="_"),
-                        "href": soup.find("a")["href"]
-                    }   
-                }
-            }
+            #soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
+            return execute_response
 
     class Region: 
         """

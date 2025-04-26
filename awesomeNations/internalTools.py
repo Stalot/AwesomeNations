@@ -9,6 +9,8 @@ import logging
 from pathlib import Path
 import urllib3
 import json
+from bs4 import BeautifulSoup
+import re
 
 logger = logging.getLogger("AwesomeLogger")
 
@@ -219,6 +221,22 @@ class _AwesomeParser():
         except Exception as e:
             raise DataError("XML Data", e)
 
+    def parse_html_in_string(self, string: str):
+        try:
+            soup = BeautifulSoup(string, 'html.parser')
+            tags = [tag for tag in soup.find_all()]
+
+            if "<br>" in string:
+                string = string.replace("<br>", "\n")
+            for tag in tags:
+                #print(tag.attrs["href"])
+                string = string.replace(str(tag), str(tag.text if not tag.name == "a" else f"{tag.text}: '{tag.attrs["href"]}'"))
+            # Remove remenants of undetected HTML tags
+            string = re.sub(r"<[^>]+>", "", string)
+            return string
+        except:
+            return string
+
     def xml_postprocessor(self, path, key: str, value: str):
         key = format_key(key, replace_empty="_", delete_not_alpha=True)
         try:
@@ -263,5 +281,7 @@ class _Criptografy():
         random.shuffle(self.key)
 
 if __name__ == "__main__":
-    shard_query = _ShardsQuery(("world", None), ("censusranks**"))
-    print(shard_query.querystring())
+    parser = _AwesomeParser()
+    html_data = """New factbook posted! <a href="/nation=orlys/detail=factbook/id=2650467">View Your Factbook</a>"""
+    parsed_data = parser.parse_html_in_string(html_data)
+    print(parsed_data)
