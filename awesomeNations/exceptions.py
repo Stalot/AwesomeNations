@@ -69,6 +69,10 @@ class HTTPError(Exception):
         self.message: str = f'HTTP error, status code: {status_code}{self.status_code_context}. Hope This Totally Pleases-you!'
         super().__init__(f'{self.message}')
 
+class ConnectionError(Exception):
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"An error occuried while estabishing connection: {reason}.\nMaybe it's a problem with your internet?")
+
 class DataError(Exception):
     """
     Exception to warn about data processing failures, such encoding or decoding errors.
@@ -78,4 +82,4 @@ class DataError(Exception):
         super().__init__(message)
 
 if __name__ == "__main__":
-    raise HTTPError(404)
+    raise ConnectionError(500)

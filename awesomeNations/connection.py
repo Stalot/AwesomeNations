@@ -1,9 +1,9 @@
 from awesomeNations.customMethods import join_keys, string_is_number
-from awesomeNations.exceptions import HTTPError, DataError
+from awesomeNations.exceptions import HTTPError, DataError, ConnectionError
 from awesomeNations.internalTools import _AwesomeParser
-from awesomeNations.internalTools import _NationAuth
+from awesomeNations.internalTools import _NationAuth, _Secret
 from typing import Optional, Literal, Any
-from urllib3 import BaseHTTPResponse
+from urllib3 import BaseHTTPResponse, HTTPResponse, HTTPHeaderDict
 from pprint import pprint as pp
 from pathlib import Path
 import urllib3
@@ -13,6 +13,33 @@ import time
 logger = logging.getLogger("AwesomeLogger")
 
 parser = _AwesomeParser()
+
+class NSResponse():
+    def __init__(self, response: HTTPResponse):
+        self._response: HTTPResponse = response
+        self.content: bytes = self._response.data
+        self.status: int = self._response.status
+        self.headers: HTTPHeaderDict = self._response.headers
+        self.encoding: str = self.headers.get("Content-Type").split(" ")[1].replace("charset=", "")
+    
+    def __repr__(self):
+        return f"NSResponse(response: HTTPResponse = {self._response})"
+    
+    def get_content(self) -> dict[str, Any]:
+        """
+        Gets response content and automatically parses it.
+        """
+        parsed_data: dict = parser.parse_xml(self.content, self.encoding)
+        return parsed_data
+    
+    def get_raw_content(self) -> str:
+        """
+        Gets response content without parsing it.
+        """
+        return self.content.decode(self.encoding).strip()
+    
+    def get_header(self, name: str, default = None):
+        return self.headers.get(name, default)
 
 class _WrapperConnection():
     def __init__(self,
@@ -32,11 +59,20 @@ class _WrapperConnection():
         self.allow_beta: bool = allow_beta
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
         
-        self._pool_manager = urllib3.PoolManager(4,
+        self._pool_manager = urllib3.PoolManager(8,
                                                 self.headers,
                                                 retries=False)
-        self.last_request_headers: dict = {}
         self._auth: Optional[_NationAuth] = None
+
+    def setup(self, **kwargs) -> None:
+        """
+        Configures _WrapperConnection attributes from the given kwargs.
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                raise AttributeError(f"_WrapperConnection has no attribute '{key}'. Did you mean one of these: {", ".join(self.__dict__.keys())}?")
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
@@ -45,59 +81,35 @@ class _WrapperConnection():
         This fetches API data and automatically parses it: (xml response -> python dictionary)
         """
         url = url.format(v=self.api_version)
-        logger.debug(f"Fetching API data: {url}")
         
         # Updates headers X-Password, X-Autologin and X-Pin in the next request
         # for actions that need authentication (Like private shards).
-        if self._auth:
-            self.headers.update(self._auth.get())
+        self._update_auth()
 
-        response = self._pool_manager.request("GET", url, headers=self.headers, fields=query_parameters, timeout=self.request_timeout)
+        response: NSResponse = self._make_request(url=url)
+        self._process_response(response)
 
-        if response.status != 200:
-            raise HTTPError(response.status)
-        
-        self.last_request_headers.update(response.headers)
-        x_pin_header: int | None = response.headers.get("X-Pin")
-        
-        # Updates self._auth X-Pin if necessary (for quick sucessive requests):
-        if self._auth and x_pin_header:
-            if self._auth.xpin != x_pin_header:
-                self._auth.xpin = x_pin_header
-
-        self.update_ratelimit_status(response.headers)
-
-        parsed_response = parser.parse_xml(self.decode_response_data(response))
-        return parsed_response
+        return response.get_content()
 
     def fetch_raw_data(self,
                        url: str) -> str:
-        logger.debug(f"Fetching raw data: {url}")
         
-        response = self._pool_manager.request("GET", url)
+        response: NSResponse = self._make_request(url=url)
+        self._process_response(response)
         
-        if response.status != 200:
-            raise HTTPError(response.status)
-        
-        self.update_ratelimit_status(response.headers)
-        
-        return self.decode_response_data(response)["data"].strip()
+        return response.get_raw_content()
 
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
         url = url.format(v=self.api_version)
         
-        logger.debug(f"Testing connection status code of: {url}")
-        
-        response = self._pool_manager.request("GET", url, headers=self.headers, timeout=20)
-        
-        self.last_request_headers.update(response.headers)
-        self.update_ratelimit_status(response.headers)
-        
-        logger.debug(f"{url} status code is: {response.status}")
+        self._update_auth()
+
+        response: NSResponse = self._make_request(url=url, raise_exception=False)
+        self._process_response(response)
 
         return response.status
    
-    def check_api_ratelimit(self) -> None:
+    def _check_api_ratelimit(self) -> None:
         """
         Checks the NationStates API ratelimit and hibernates if the request limit was reached.
         """
@@ -107,35 +119,41 @@ class _WrapperConnection():
                     time.sleep(self.ratelimit_reset_time + 1)
                     logger.info("Hibernation finished")
 
-    def update_ratelimit_status(self, response_headers: dict) -> None:
-        self.ratelimit_remaining = self.get_header(response_headers, "Ratelimit-remaining")
-        self.ratelimit_requests_seen = self.get_header(response_headers, "X-ratelimit-requests-seen")
-        self.check_api_ratelimit()
+    def _update_ratelimit_status(self, response: NSResponse) -> None:
+        self.ratelimit_remaining = int(response.get_header("Ratelimit-remaining"))
+        self.ratelimit_requests_seen = int(response.get_header("X-ratelimit-requests-seen"))
+        self._check_api_ratelimit()
 
-    def decode_response_data(self, response: BaseHTTPResponse) -> dict[str] | None:
-        encodings: tuple[str] = ("UTF-8", "LATIN-1")
-        tries: int = 0
-        for enc in encodings:
-            try:
-                data = {
-                    "encoding": enc,
-                    "data": response.data.decode(enc)
-                }
-                return data
-            except Exception as decoding_error:
-                logger.warning(F"Failed to decode response using {enc}")
-                tries += 1
-                if tries >= len(encodings):
-                    raise DataError("API Response", "Decoding error.")
+    def _make_request(self, method: str = "GET", url: str = None, raise_exception: bool = True) -> NSResponse:
+        match method:
+            case "GET":
+                logger.debug(f"GET: {url}")
+            case "POST":
+                logger.debug(f"POST: {url}")
+            case _:
+                raise ValueError(f"Method '{method}' is invalid.")
+        try:
+            ns_response = NSResponse(self._pool_manager.request(method, url, headers=self.headers, timeout=self.request_timeout))
+            logger.debug(f"{ns_response.status}")
+            if ns_response.status != 200 and raise_exception:
+                raise HTTPError(ns_response.status)
+            return ns_response
+        except urllib3.exceptions.NameResolutionError as e:
+            raise ConnectionError(e)
 
-    def get_header(self, headers: dict, key: str, default = None) -> int | None:
-        output_value: Any | None = default
-        key_value: str | None = headers.get(key)
-        if key_value:
-            output_value = key_value
-            if string_is_number(key_value):
-                output_value = int(key_value)
-        return output_value
+    def _update_auth(self, response: NSResponse = None) -> None:
+        x_pin_header: int | None = response.get_header("X-Pin") if response else None
+        
+        # Updates self._auth X-Pin if necessary (for quick sucessive requests):
+        if self._auth:
+            if x_pin_header:
+                if self._auth.xpin != x_pin_header:
+                    self._auth.xpin = _Secret(x_pin_header)
+            self.headers.update(self._auth.get())
+
+    def _process_response(self, response: NSResponse) -> None:     
+        self._update_auth(response)
+        self._update_ratelimit_status(response)
 
 if __name__ == "__main__":
     ...

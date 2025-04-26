@@ -1,6 +1,6 @@
 from awesomeNations.connection import _WrapperConnection
 from awesomeNations.customMethods import join_keys, format_key, generate_epoch_timestamp
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand
+from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand, _Secret
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
@@ -91,12 +91,14 @@ class AwesomeNations():
         "Cache-Control": "no-cache",
         }
         
-        wrapper.headers = headers
-        wrapper.request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout)
-        wrapper.ratelimit_sleep = self.ratelimit_sleep
-        wrapper.ratelimit_reset_time = self.ratelimit_reset_time
-        wrapper.api_version = self.api_version
-        wrapper.allow_beta = self.allow_beta
+        wrapper.setup(
+            headers=headers,
+            request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout),
+            ratelimit_sleep = self.ratelimit_sleep,
+            ratelimit_reset_time = self.ratelimit_reset_time,
+            api_version = self.api_version,
+            allow_beta = self.allow_beta
+        )
         
         if self.log_level is None:
             logger.disabled = True
@@ -174,16 +176,30 @@ class AwesomeNations():
                      password: str = None,
                      autologin: str = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            wrapper._auth = _NationAuth(password, autologin) if any((password, autologin)) else None
+            self.password: Optional[_Secret] = _Secret(password)
+            self.autologin: Optional[_Secret] = _Secret(autologin)
+            
+            if any((password, autologin)):
+                self.set_auth(self.password.reveal(), self.autologin.reveal())
+            # wrapper._auth = _NationAuth(self.authentication[0], self.authentication[1]) if any((password, autologin)) else None
 
         def __repr__(self):
             return f"Nation(nation_name={self.nation_name})"
-
+    
+        def set_auth(self, password: str = None, autologin: str = None):
+            if any((password, autologin)):
+                self.password = _Secret(password)
+                self.autologin = _Secret(autologin)
+                new_auth = _NationAuth(self.password, self.autologin)
+                setattr(wrapper, '_auth', new_auth)
+            else:
+                raise ValueError("At least a password or an autologin must be given.")
+    
         def exists(self) -> bool:
             """
             Checks if nation exists.
             """
-            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name)).querystring()
+            url = wrapper.base_url + f"?nation={self.nation_name}"
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:

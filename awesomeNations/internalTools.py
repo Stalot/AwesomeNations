@@ -8,8 +8,52 @@ import random
 import logging
 from pathlib import Path
 import urllib3
+import json
 
 logger = logging.getLogger("AwesomeLogger")
+
+class _Secret():
+    """
+    Stores a string value and hides it from string representation.
+    
+    `value` is the value to be stored. If `single_use` is `True`, the value will be set to ``None`` after being revealed once.
+    """
+    def __init__(self, value: str, single_use: bool = False):
+        if type(value) is _Secret:
+            raise ValueError("You can't have a _Secret inside another _Secret.")
+        self._value: Optional[str] = str(value) if value else None
+        self.single_use: bool = single_use
+    
+    def __str__(self):
+        return "<hidden>"
+    
+    def __repr__(self):
+        return "<hidden>"
+    
+    def __getattribute__(self, name):
+        if name in ('__str__', '__repr__'):
+            return lambda: "<hidden>"
+        if name == '_value':
+           return "<hidden>"
+        return object.__getattribute__(self, name)
+    
+    def __dir__(self):
+        return [attr for attr in super().__dir__() if attr != '_value']
+
+    def __bool__(self):
+        return object.__getattribute__(self, "_value") is not None
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, _Secret):
+            return object.__getattribute__(self, "_value") == object.__getattribute__(other, "_value")
+        return object.__getattribute__(self, "_value") == other
+
+    def reveal(self) -> Optional[str]:
+        try:
+            return object.__getattribute__(self, "_value")
+        finally:
+            if self.single_use:
+                object.__setattr__(self, "_value", None)
 
 class _ShardsQuery():
     def __init__(self,
@@ -23,7 +67,7 @@ class _ShardsQuery():
         self.query_shards = shards
         self.query_params = params
         self._valid_shards = {
-            "nation": ['admirable', 'admirables', 'animal', 'animaltrait', 'answered', 'banner*', 'banners*', 'capital', 'category', 'census**', 'crime', 'currency', 'customleader', 'customcapital', 'customreligion', 'dbid', 'deaths', 'demonym', 'demonym2', 'demonym2plural', 'dispatches', 'dispatchlist', 'endorsements', 'factbooks', 'factbooklist', 'firstlogin', 'flag', 'founded', 'foundedtime', 'freedom', 'fullname', 'gavote', 'gdp', 'govt', 'govtdesc', 'govtpriority', 'happenings', 'income', 'industrydesc', 'influence', 'influencenum', 'lastactivity', 'lastlogin', 'leader', 'legislation', 'majorindustry', 'motto', 'name', 'notable', 'notables', 'nstats', 'policies', 'poorest', 'population', 'publicsector', 'rcensus', 'region', 'religion', 'richest', 'scvote', 'sectors', 'sensibilities', 'tax', 'tgcanrecruit', 'tgcancampaign', 'type', 'wa', 'wabadges', 'wcensus', 'zombie'],
+            "nation": ['admirable', 'admirables', 'animal', 'animaltrait', 'answered', 'banner*', 'banners*', 'capital', 'category', 'census**', 'crime', 'currency', 'customleader', 'customcapital', 'customreligion', 'dbid', 'deaths', 'demonym', 'demonym2', 'demonym2plural', 'dispatches', 'dispatchlist', 'endorsements', 'factbooks', 'factbooklist', 'firstlogin', 'flag', 'founded', 'foundedtime', 'freedom', 'fullname', 'gavote', 'gdp', 'govt', 'govtdesc', 'govtpriority', 'happenings', 'income', 'industrydesc', 'influence', 'influencenum', 'lastactivity', 'lastlogin', 'leader', 'legislation', 'majorindustry', 'motto', 'name', 'notable', 'notables', 'nstats', 'policies', 'poorest', 'population', 'publicsector', 'rcensus', 'region', 'religion', 'richest', 'scvote', 'sectors', 'sensibilities', 'tax', 'tgcanrecruit', 'tgcancampaign', 'type', 'wa', 'wabadges', 'wcensus', 'zombie', 'dossier', 'issues', 'issuesummary', 'nextissue', 'nextissuetime', 'notices', 'packs', 'ping', 'rdossier', 'unread'],
             "region": ['banlist', 'banner', 'bannerby', 'bannerurl', 'census', 'censusranks', 'dbid', 'delegate', 'delegateauth', 'delegatevotes', 'dispatches', 'embassies', 'embassyrmb', 'factbook', 'flag', 'founded', 'foundedtime', 'founder', 'frontier', 'gavote', 'governor', 'governortitle', 'happenings', 'history', 'lastupdate', 'lastmajorupdate', 'lastminorupdate', 'magnetism', 'messages', 'name', 'nations', 'numnations', 'wanations', 'numwanations', 'officers', 'poll', 'power', 'recruiters', 'scvote', 'tags', 'wabadges', 'zombie'],
             "world": ['banner', 'census', 'censusid', 'censusdesc', 'censusname', 'censusranks', 'censusscale', 'censustitle', 'dispatch', 'dispatchlist', 'faction', 'factions', 'featuredregion', 'happenings', 'lasteventid', 'nations', 'newnations', 'newnationdetails', 'numnations', 'numregions', 'poll', 'regions', 'regionsbytag', 'tgqueue'],
             "wa": ['numnations', 'numdelegates', 'delegates', 'members', 'happenings', 'proposals', 'resolution', 'voters', 'votetrack', 'dellog', 'delvotes', 'lastresolution']
@@ -59,14 +103,11 @@ class _ShardsQuery():
                 raise ValueError(f"Shard '{shards}' not found in {self.api_family[0].capitalize()} API family.")
         elif type(shards) == list or type(shards) == tuple:
             for shard in shards:
-                print(shard)
                 if not shard in valid:
-                    print("Based")
                     raise ValueError(f"Shard '{shard}' not found in {self.api_family[0].capitalize()} API family.")
         else:
             raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
                 
-
 class _DailyDataDumps():
     """
     Daily Data Dumps urls manager.
@@ -102,32 +143,21 @@ class _DailyDataDumps():
 class _NationAuth():
     """Nation authentication"""
     def __init__(self,
-                 password: Optional[str] = None,
-                 autologin: Optional[str] = None):
-        if not any((password, autologin)):
-            raise ValueError("NationAuth can't be empty, a password or autologin must be given.")
-        if password and type(password) is not str:
-            raise ValueError(f"password must be str, not {type(password).__name__}")
-        if autologin and type(autologin) is not str:
-            raise ValueError(f"autologin must be str, not {type(autologin).__name__}")
-        self.crip = _Criptografy()
-        self.password = self.__secret__(password)
-        self.autologin = self.__secret__(autologin)
-        self.xpin: Optional[int] = None
-    
-    def __secret__(self, x: str):
-        hidden_x = self.crip.encrypt(x) if x else ""
-        return hidden_x
-
-    def __show__(self, x: str):
-        hidden_x = self.crip.decrypt(x) if x else ""
-        return hidden_x
+                 password: Optional[_Secret] = None,
+                 autologin: Optional[_Secret] = None):
+        if password and type(password) is not _Secret:
+            raise ValueError(f"password must be _Secret, not {type(password).__name__}.")
+        if autologin and type(autologin) is not _Secret:
+            raise ValueError(f"autologin must be _Secret, not {type(autologin).__name__}.")
+        self.password = password
+        self.autologin = autologin
+        self.xpin: Optional[_Secret] = None
     
     def get(self) -> dict[str]:
         auth_headers: dict[str] = {
-            "X-Password": self.__show__(self.password),
-            "X-Autologin": self.__show__(self.autologin),
-            "X-Pin": self.xpin if self.xpin else ""
+            "X-Password": self.password.reveal() if self.password.reveal() else "",
+            "X-Autologin": self.autologin.reveal() if self.autologin.reveal() else "",
+            "X-Pin": self.xpin.reveal() if self.xpin else ""
         }
         return auth_headers
 
@@ -179,13 +209,13 @@ class _AwesomeParser():
     def __init__(self):
         pass
     
-    def parse_xml(self, data: dict[str]):
+    def parse_xml(self, content: bytes | str, encoding: str):
         """
         Parses XML data into a dictionary.
         """
         try:
-            parsed_xml: dict = xmltodict.parse(data["data"], data["encoding"], postprocessor=self.xml_postprocessor)
-            return parsed_xml
+            parsed_xml: dict = xmltodict.parse(content, encoding, postprocessor=self.xml_postprocessor)
+            return json.loads(json.dumps(parsed_xml))
         except Exception as e:
             raise DataError("XML Data", e)
 
