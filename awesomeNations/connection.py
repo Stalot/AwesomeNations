@@ -14,7 +14,7 @@ logger = logging.getLogger("AwesomeLogger")
 
 parser = _AwesomeParser()
 
-class NSResponse():
+class _NSResponse():
     def __init__(self, response: HTTPResponse):
         self._response: HTTPResponse = response
         self.content: bytes = self._response.data
@@ -23,7 +23,7 @@ class NSResponse():
         self.encoding: str = self.headers.get("Content-Type").split(" ")[1].replace("charset=", "")
     
     def __repr__(self):
-        return f"NSResponse(response: HTTPResponse = {self._response})"
+        return f"_NSResponse(response: HTTPResponse = {self._response})"
     
     def get_content(self) -> dict[str, Any]:
         """
@@ -42,27 +42,21 @@ class NSResponse():
         return self.headers.get(name, default)
 
 class _WrapperConnection():
-    def __init__(self,
-                 headers: dict = None,
-                 ratelimit_sleep: bool = None,
-                 ratelimit_reset_time: int = None,
-                 api_version: int = None,
-                 allow_beta: bool = None
-                 ):
-        self.headers: dict = headers
-        self.request_timeout: int | tuple = 10
-        self.ratelimit_sleep: bool = ratelimit_sleep
-        self.ratelimit_reset_time: int = ratelimit_reset_time
+    def __init__(self):
+        self.headers: dict = None
+        self.request_timeout: int | tuple = None
+        self.ratelimit_sleep: bool = None
+        self.ratelimit_reset_time: int = None
         self.ratelimit_remaining: int = None
         self.ratelimit_requests_seen: int = None
-        self.api_version: int = api_version
-        self.allow_beta: bool = allow_beta
+        self.api_version: int = None
+        self.allow_beta: bool = None
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
         
         self._pool_manager = urllib3.PoolManager(8,
                                                 self.headers,
                                                 retries=False)
-        self._auth: Optional[_NationAuth] = None
+        self.auth: Optional[_NationAuth] = None
 
     def setup(self, **kwargs) -> None:
         """
@@ -86,7 +80,7 @@ class _WrapperConnection():
         # for actions that need authentication (Like private shards).
         self._update_auth()
 
-        response: NSResponse = self._make_request(url=url)
+        response: _NSResponse = self._make_request(url=url)
         self._process_response(response)
 
         return response.get_content()
@@ -94,7 +88,7 @@ class _WrapperConnection():
     def fetch_raw_data(self,
                        url: str) -> str:
         
-        response: NSResponse = self._make_request(url=url)
+        response: _NSResponse = self._make_request(url=url)
         self._process_response(response)
         
         return response.get_raw_content()
@@ -104,7 +98,7 @@ class _WrapperConnection():
         
         self._update_auth()
 
-        response: NSResponse = self._make_request(url=url, raise_exception=False)
+        response: _NSResponse = self._make_request(url=url, raise_exception=False)
         self._process_response(response)
 
         return response.status
@@ -119,12 +113,12 @@ class _WrapperConnection():
                     time.sleep(self.ratelimit_reset_time + 1)
                     logger.info("Hibernation finished")
 
-    def _update_ratelimit_status(self, response: NSResponse) -> None:
+    def _update_ratelimit_status(self, response: _NSResponse) -> None:
         self.ratelimit_remaining = int(response.get_header("Ratelimit-remaining"))
         self.ratelimit_requests_seen = int(response.get_header("X-ratelimit-requests-seen"))
         self._check_api_ratelimit()
 
-    def _make_request(self, method: str = "GET", url: str = None, raise_exception: bool = True) -> NSResponse:
+    def _make_request(self, method: str = "GET", url: str = None, raise_exception: bool = True) -> _NSResponse:
         match method:
             case "GET":
                 logger.debug(f"GET: {url}")
@@ -133,7 +127,7 @@ class _WrapperConnection():
             case _:
                 raise ValueError(f"Method '{method}' is invalid.")
         try:
-            ns_response = NSResponse(self._pool_manager.request(method, url, headers=self.headers, timeout=self.request_timeout))
+            ns_response = _NSResponse(self._pool_manager.request(method, url, headers=self.headers, timeout=self.request_timeout))
             logger.debug(f"{ns_response.status}")
             if ns_response.status != 200 and raise_exception:
                 raise HTTPError(ns_response.status)
@@ -141,17 +135,17 @@ class _WrapperConnection():
         except urllib3.exceptions.NameResolutionError as e:
             raise ConnectionError(e)
 
-    def _update_auth(self, response: NSResponse = None) -> None:
+    def _update_auth(self, response: _NSResponse = None) -> None:
         x_pin_header: int | None = response.get_header("X-Pin") if response else None
         
-        # Updates self._auth X-Pin if necessary (for quick sucessive requests):
-        if self._auth:
+        # Updates self.auth X-Pin if necessary (for quick sucessive requests):
+        if self.auth:
             if x_pin_header:
-                if self._auth.xpin != x_pin_header:
-                    self._auth.xpin = _Secret(x_pin_header)
-            self.headers.update(self._auth.get())
+                if self.auth.xpin != x_pin_header:
+                    self.auth.xpin = _Secret(x_pin_header)
+            self.headers.update(self.auth.get())
 
-    def _process_response(self, response: NSResponse) -> None:     
+    def _process_response(self, response: _NSResponse) -> None:     
         self._update_auth(response)
         self._update_ratelimit_status(response)
 

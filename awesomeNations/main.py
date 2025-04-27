@@ -109,7 +109,7 @@ class AwesomeNations():
             raise ValueError(f"Invalid {type(self.log_level).__name__} '{self.log_level}', log_level must be an int (to change level) or None (to disable logging)")
 
     def __repr__(self):
-        return f"AwesomeNations(user_agent={self.user_agent}, request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level}, allow_beta={self.allow_beta})"
+        return f"AwesomeNations(user_agent='{self.user_agent}', request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level}, allow_beta={self.allow_beta})"
 
     def today_is_nationstates_birthday(self) -> bool:
         "Today is 11/13?"
@@ -191,7 +191,7 @@ class AwesomeNations():
                 self.password = _Secret(password)
                 self.autologin = _Secret(autologin)
                 new_auth = _NationAuth(self.password, self.autologin)
-                setattr(wrapper, '_auth', new_auth)
+                setattr(wrapper, 'auth', new_auth)
             else:
                 raise ValueError("At least a password or an autologin must be given.")
     
@@ -396,5 +396,6 @@ if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", log_level=DEBUG)
     nation = api.Nation("Orlys")
     region = api.Region("Fullworthia")
+    print(api)
     print(nation)
     print(region)

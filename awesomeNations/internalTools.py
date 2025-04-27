@@ -57,7 +57,7 @@ class _Secret():
 
 class _ShardsQuery():
     def __init__(self,
-                 api_family: tuple[str, str | None],
+                 api_family: tuple[Literal["nation", "region", "world", "wa"], str | None],
                  shards: Optional[str | list[str]] = None, 
                  params: Optional[dict[str, str | list[str]]] = None):
         if type(api_family) is not tuple:
