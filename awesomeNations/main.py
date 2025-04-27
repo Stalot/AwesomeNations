@@ -177,15 +177,14 @@ class AwesomeNations():
                      password: str = None,
                      autologin: str = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            self.password: Optional[_Secret] = _Secret(password)
-            self.autologin: Optional[_Secret] = _Secret(autologin)
+            self.password: Optional[_Secret] = _Secret(password) if password else None
+            self.autologin: Optional[_Secret] = _Secret(autologin) if autologin else None
             
             if any((password, autologin)):
                 self.set_auth(self.password.reveal(), self.autologin.reveal())
-            # wrapper._auth = _NationAuth(self.authentication[0], self.authentication[1]) if any((password, autologin)) else None
 
         def __repr__(self):
-            return f"Nation(nation_name={self.nation_name})"
+            return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
     
         def set_auth(self, password: str = None, autologin: str = None):
             if any((password, autologin)):
@@ -200,7 +199,7 @@ class AwesomeNations():
             """
             Checks if nation exists.
             """
-            url = wrapper.base_url + f"?nation={self.nation_name}"
+            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name)).querystring()
             status_code: int = wrapper.connection_status_code(url)
             match status_code:
                 case 200:
@@ -320,7 +319,6 @@ class AwesomeNations():
             if execute_response["nation"].get("error"):
                 raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
             
-            #soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
             return execute_response
 
         def rmbpost(self,
@@ -353,7 +351,6 @@ class AwesomeNations():
             if execute_response["nation"].get("error"):
                 raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
             
-            #soup = BeautifulSoup(execute_response["nation"]["success"], "html.parser")
             return execute_response
 
     class Region: 
@@ -361,11 +358,10 @@ class AwesomeNations():
         Class dedicated to NationStates region API.
         """
         def __init__(self, region_name: str) -> None:
-            # self.pretty_name: str = prettify_string(str(region_name))
             self.region_name = format_key(region_name, False, '%20')
         
         def __repr__(self):
-            return f"Region(region_name={self.region_name})"
+            return f"Region(region_name='{self.region_name}')"
         
         def exists(self) -> bool:
             """
@@ -399,3 +395,6 @@ class AwesomeNations():
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", log_level=DEBUG)
     nation = api.Nation("Orlys")
+    region = api.Region("Fullworthia")
+    print(nation)
+    print(region)

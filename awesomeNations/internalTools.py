@@ -3,8 +3,6 @@ from awesomeNations.exceptions import DataError
 from pprint import pprint as pp
 from typing import Optional, Literal
 import xmltodict
-import string
-import random
 import logging
 from pathlib import Path
 import urllib3
@@ -108,7 +106,8 @@ class _ShardsQuery():
                 if not shard in valid:
                     raise ValueError(f"Shard '{shard}' not found in {self.api_family[0].capitalize()} API family.")
         else:
-            raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
+            if shards:
+                raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
                 
 class _DailyDataDumps():
     """
@@ -140,7 +139,7 @@ class _DailyDataDumps():
             for chunk in file_response.stream(10**4, True):
                 file_out.write(chunk)
         
-        logger.debug(f"Daily Data Dump located in: {Path(filepath).absolute()}")
+        logger.info(f"Daily Data Dump located in: {Path(filepath).absolute()}")
 
 class _NationAuth():
     """Nation authentication"""
@@ -249,36 +248,6 @@ class _AwesomeParser():
             return formatted_key, formatted_value
         except (ValueError, TypeError):
             return key, value
-
-class _Criptografy():
-    "Basic substitution criptography!"
-    def __init__(self):
-        self.chars = " " + string.punctuation + string.digits + string.ascii_letters
-        self.chars = list(self.chars)
-        self.key = self.chars.copy()
-        random.shuffle(self.key)
-     
-     # Encrypt stuff :D
-    def encrypt(self, message_to_encrypt: str) -> str:
-        plain_text = message_to_encrypt
-        cipher_text = ""
-        for letter in plain_text:
-            index = self.chars.index(letter)
-            cipher_text += self.key[index]
-        return cipher_text
-
-    # Decrypt stuff :D
-    def decrypt(self, message_to_decrypt: str) -> str:
-        cipher_text = message_to_decrypt
-        plain_text = ""
-        for letter in cipher_text:
-            index = self.key.index(letter)
-            plain_text += self.chars[index]
-        return plain_text
-    
-    def exhaust(self):
-        self.key = self.chars.copy()
-        random.shuffle(self.key)
 
 if __name__ == "__main__":
     parser = _AwesomeParser()
