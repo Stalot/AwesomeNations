@@ -186,7 +186,7 @@ class AwesomeNations():
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
     
-        def set_auth(self, password: str = None, autologin: str = None):
+        def set_auth(self, password: str = None, autologin: str = None) -> None:
             if any((password, autologin)):
                 self.password = _Secret(password)
                 self.autologin = _Secret(autologin)
@@ -210,7 +210,7 @@ class AwesomeNations():
                     raise HTTPError(status_code)
 
         # DEPRECATED METHOD
-        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
             """
             # THIS METHOD IS DEPRECATED
             ## Use ```get_shards()``` instead!
@@ -233,7 +233,7 @@ class AwesomeNations():
             return response
 
         # Replacing get_public_shards()
-        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
             """
             Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
@@ -249,7 +249,7 @@ class AwesomeNations():
             response: dict = wrapper.fetch_api_data(url)
             return response
 
-        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, Any]:
+        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, dict[str, Any]]:
             """
             Executes private commands.
             """
@@ -275,7 +275,7 @@ class AwesomeNations():
                      title: Optional[str] = None,
                      text: Optional[str] = None,
                      category: Optional[int] = None,
-                     subcategory: Optional[int] = None) -> dict[str, dict]:
+                     subcategory: Optional[int] = None) -> dict[str, dict[str, Any]]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -317,15 +317,16 @@ class AwesomeNations():
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
-            if execute_response["nation"].get("error"):
-                reason = parser.parse_html_in_string(execute_response["nation"]["error"])
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
                 raise ValueError(reason)
             
             return execute_response
 
         def rmbpost(self,
                      region: str,
-                     text: str) -> dict[str, dict]:
+                     text: str) -> dict[str, dict[str, Any]]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -350,15 +351,16 @@ class AwesomeNations():
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
-            if execute_response["nation"].get("error"):
-                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                raise ValueError(parser.parse_html_in_string(error))
             
             return execute_response
 
         def giftcard(self,
                      id: int,
                      season: int,
-                     to: str):
+                     to: str) -> dict[str, dict[str, Any]]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -384,8 +386,36 @@ class AwesomeNations():
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
-            if execute_response["nation"].get("error"):
-                reason = parser.parse_html_in_string(execute_response["nation"]["error"])
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
+                raise ValueError(reason)
+            
+            return execute_response
+
+        def answer_issue(self,
+                     id: int,
+                     option: int) -> dict[str, dict[str, Any]]:
+            """
+            # BETA:
+            Currently in development. Subject to change without warning.
+            
+            ---
+            
+            Address an Issue.
+            """                        
+            query_params: dict[str, int] = {
+                "issue": id,
+                "option": option,
+            }
+            
+            c = _PrivateCommand(self.nation_name, "issue", query_params, wrapper.allow_beta)
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute"))
+            
+            error: Optional[str] = execute_response["nation"].get("issue").get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
                 raise ValueError(reason)
             
             return execute_response
