@@ -312,12 +312,14 @@ class AwesomeNations():
             token = prepare_response.get("nation").get("success")
             
             if not token:
-                raise ValueError(parser.parse_html_in_string(prepare_response["nation"]["error"]))
+                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
+                raise ValueError(reason)
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
             if execute_response["nation"].get("error"):
-                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
+                reason = parser.parse_html_in_string(execute_response["nation"]["error"])
+                raise ValueError(reason)
             
             return execute_response
 
@@ -350,6 +352,41 @@ class AwesomeNations():
             
             if execute_response["nation"].get("error"):
                 raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
+            
+            return execute_response
+
+        def giftcard(self,
+                     id: int,
+                     season: int,
+                     to: str):
+            """
+            # BETA:
+            Currently in development. Subject to change without warning.
+            
+            ---
+            
+            Gift a Trading Card to someone else.
+            """                        
+            query_params = {
+                "cardid": id,
+                "season": season,
+                "to": format_key(to, replace_empty="_"),
+            }
+            
+            c = _PrivateCommand(self.nation_name, "giftcard", query_params, wrapper.allow_beta)
+
+            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
+            token = prepare_response.get("nation").get("success")
+            
+            if not token:
+                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
+                raise ValueError(reason)
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
+            
+            if execute_response["nation"].get("error"):
+                reason = parser.parse_html_in_string(execute_response["nation"]["error"])
+                raise ValueError(reason)
             
             return execute_response
 

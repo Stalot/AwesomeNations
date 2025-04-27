@@ -127,6 +127,7 @@ class _WrapperConnection():
             case _:
                 raise ValueError(f"Method '{method}' is invalid.")
         try:
+            time.sleep(0.1)
             ns_response = _NSResponse(self._pool_manager.request(method, url, headers=self.headers, timeout=self.request_timeout))
             logger.debug(f"{ns_response.status}")
             if ns_response.status != 200 and raise_exception:
