@@ -283,6 +283,9 @@ class AwesomeNations():
             ---
             
             Creates, edits and deletes dispatches.
+            
+            When adding or editing a dispatch, specify: `title`, `text`, `category` and `subcategory`.
+            When editing or removing a dispatch, you must also specify `id`.
             """
             if not action == "add" and not id:
                 raise ValueError(f"action '{action}' needs a valid dispatch id!")
@@ -397,12 +400,10 @@ class AwesomeNations():
                      id: int,
                      option: int) -> dict[str, dict[str, Any]]:
             """
-            # BETA:
-            Currently in development. Subject to change without warning.
-            
-            ---
-            
             Address an Issue.
+
+            To dismiss an issue, set `option` to -1 (Note that option id numbers
+            begin counting at zero).
             """                        
             query_params: dict[str, int] = {
                 "issue": id,
