@@ -253,6 +253,8 @@ class AwesomeNations():
             """
             Executes private commands.
             """
+            if not isinstance(c, str):
+                raise ValueError(f"c must be type str, not {type(c).__name__}.")
             command = _PrivateCommand(self.nation_name,
                                       c,
                                       kwargs,
@@ -287,14 +289,22 @@ class AwesomeNations():
             When adding or editing a dispatch, specify: `title`, `text`, `category` and `subcategory`.
             When editing or removing a dispatch, you must also specify `id`.
             """
+            if action != "add" and action != "edit" and action != "remove":
+                raise ValueError(f"action must be 'add', 'edit' or 'remove', not '{action}'.")
             if not action == "add" and not id:
                 raise ValueError(f"action '{action}' needs a valid dispatch id!")
             if (action == "add" or action == "edit") and not all((title, text, category, subcategory)):
                 raise ValueError(f"action '{action}' needs a valid title, text, category and subcategory.")
 
-            if category and not type(category) == int:
+            if id and not isinstance(id, int):
+                raise ValueError(f"id must be int, not type '{type(id).__name__}'.")
+            if title and not isinstance(title, str):
+                raise ValueError(f"title must be str, not type '{type(title).__name__}'.")
+            if text and not isinstance(text, str):
+                raise ValueError(f"text must be str, not type '{type(text).__name__}'.")
+            if category and not isinstance(category, int):
                 raise ValueError(f"category must be int, not type '{type(category).__name__}'.")
-            if subcategory and not type(subcategory) == int:
+            if subcategory and not isinstance(subcategory, int):
                 raise ValueError(f"subcategory must be int, not type '{type(subcategory).__name__}'.")
             
             query_params = {
@@ -337,7 +347,12 @@ class AwesomeNations():
             ---
             
             Post to a regional RMB.
-            """                        
+            """
+            if not isinstance(region, str):
+                raise ValueError(f"region must be type str, not {type(region).__name__}.")
+            if not isinstance(text, str):
+                raise ValueError(f"text must be type str, not {type(text).__name__}.")
+
             query_params = {
                 "nation": self.nation_name,
                 "region": format_key(region, replace_empty="%20"),
@@ -371,7 +386,13 @@ class AwesomeNations():
             ---
             
             Gift a Trading Card to someone else.
-            """                        
+            """         
+            if not isinstance(id, int):
+                raise ValueError(f"id must be type int, not {type(id).__name__}.")
+            if not isinstance(season, int):
+                raise ValueError(f"season must be type int, not {type(season).__name__}.")
+            if not isinstance(to, str):
+                raise ValueError(f"to must be type str, not {type(to).__name__}.")
             query_params = {
                 "cardid": id,
                 "season": season,
@@ -404,7 +425,12 @@ class AwesomeNations():
 
             To dismiss an issue, set `option` to -1 (Note that option id numbers
             begin counting at zero).
-            """                        
+            """     
+            if not isinstance(id, int):
+                raise ValueError(f"id must be type int, not {type(id).__name__}.")
+            if not isinstance(option, int):
+                raise ValueError(f"option must be type int, not {type(option).__name__}.")
+                               
             query_params: dict[str, int] = {
                 "issue": id,
                 "option": option,
