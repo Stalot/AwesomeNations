@@ -41,7 +41,7 @@ class AwesomeNations():
     ### user_agent:
 
     > Sets a User-Agent. Whenever possible, your tool should identify itself by setting
-    > the User-Agent header with relevant data.
+    > the User-Agent header with **relevant** data.
 
     > - `<application name>/<version> <comments>`
     > - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
@@ -69,6 +69,10 @@ class AwesomeNations():
     ### log_level:
     
     > Sets logging log level, if None is given, disables logging.
+
+    ### allow_beta:
+    
+    > Defines if AwesomeNations should allow beta resources to be used by you or not.
     """
 
     def __init__(self,
