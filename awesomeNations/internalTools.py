@@ -133,13 +133,17 @@ class _DailyDataDumps():
         
         logger.debug(f"Dowloading Daily Data Dump: {url}")
         
-        if not Path(filepath).suffix:
-            raise ValueError(f"{filepath}: This path needs a suffix dude!")
+        filepath = Path(filepath)
+        
+        if not filepath.suffix:
+            filepath = filepath.with_suffix(".gz")
+        if filepath.suffix != ".gz":
+            raise ValueError(f"{filepath.as_posix()}: '{filepath.suffix}' is not a valid suffix.")
         with urllib3.request("GET", url, preload_content=False) as file_response, open(filepath, "wb") as file_out:
             for chunk in file_response.stream(10**4, True):
                 file_out.write(chunk)
         
-        logger.info(f"Daily Data Dump located in: {Path(filepath).absolute()}")
+        logger.info(f"Daily data dump located in: {Path(filepath).absolute()}")
 
 class _NationAuth():
     """Nation authentication"""

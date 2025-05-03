@@ -131,7 +131,9 @@ class AwesomeNations():
         age = today - created
         return age
 
-    def get_daily_data_dumps(self, filepath: str | Path = "./datadump.gz", type: Literal["nation", "region"] = "nation") -> None:
+    def get_daily_data_dumps(self,
+                             filepath: str | Path = "./datadump.gz",
+                             type: Literal["nation", "region"] = "nation") -> None:
         """
         Dowloads NationStates daily data dumps.
         

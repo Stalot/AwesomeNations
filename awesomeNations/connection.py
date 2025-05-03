@@ -12,8 +12,6 @@ import time
 
 logger = logging.getLogger("AwesomeLogger")
 
-parser = _AwesomeParser()
-
 class _NSResponse():
     def __init__(self, response: HTTPResponse):
         self._response: HTTPResponse = response
@@ -21,6 +19,7 @@ class _NSResponse():
         self.status: int = self._response.status
         self.headers: HTTPHeaderDict = self._response.headers
         self.encoding: str = self.headers.get("Content-Type").split(" ")[1].replace("charset=", "")
+        self._parser = _AwesomeParser()
     
     def __repr__(self):
         return f"_NSResponse(response: HTTPResponse = {self._response})"
@@ -29,7 +28,7 @@ class _NSResponse():
         """
         Gets response content and automatically parses it.
         """
-        parsed_data: dict = parser.parse_xml(self.content, self.encoding)
+        parsed_data: dict = self._parser.parse_xml(self.content, self.encoding)
         return parsed_data
     
     def get_raw_content(self) -> str:
