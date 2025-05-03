@@ -9,7 +9,8 @@ What's new:
 - **Nation** private commands;
 - **Nation** `set_auth()`: Sets Nation authentication;
 - Shard validation, to prevent user from requesting shards that don't exist;
-- Overall internal organization upgrades.
+- Overall internal organization upgrades;
+- New code examples: `prize_draw.py` and `publish_dispatch.py`.
 
 # </> 2.0.0 </>
 

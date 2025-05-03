@@ -187,12 +187,15 @@ class AwesomeNations():
             self.autologin: Optional[_Secret] = _Secret(autologin) if autologin else None
             
             if any((password, autologin)):
-                self.set_auth(self.password.reveal(), self.autologin.reveal())
+                self.set_auth(self.password.reveal() if password else None, self.autologin.reveal() if autologin else None)
 
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
     
         def set_auth(self, password: str = None, autologin: str = None) -> None:
+            """
+            Sets Nation authentication.
+            """
             if any((password, autologin)):
                 self.password = _Secret(password)
                 self.autologin = _Secret(autologin)
@@ -234,7 +237,7 @@ class AwesomeNations():
             > exactly what you want and can be used to request data not available from the Standard API!
             """
             url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name), shards, kwargs).querystring()
-            logger.warning("get_public_shards() is deprecated.")
+            logger.warning("get_public_shards() is deprecated, use get_shards() instead.")
             response: dict = wrapper.fetch_api_data(url)
             return response
 
@@ -343,7 +346,7 @@ class AwesomeNations():
             
             return execute_response
 
-        def rmbpost(self,
+        def rmb_post(self,
                      region: str,
                      text: str) -> dict[str, dict[str, Any]]:
             """
@@ -381,7 +384,7 @@ class AwesomeNations():
             
             return execute_response
 
-        def giftcard(self,
+        def gift_card(self,
                      id: int,
                      season: int,
                      to: str) -> dict[str, dict[str, Any]]:
@@ -477,16 +480,17 @@ class AwesomeNations():
                 case _:
                     raise HTTPError(status_code)
 
-        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
             """
             Gets one or more shards from the requested region, returns the standard API if no shards provided.
             
             ### Standard:
             
-            A compendium of the most commonly sought information.
+            > A compendium of the most commonly sought information.
             
             ### Shards:
-            If you don't need most of this data, please use shards instead. Shards allow you to request exactly what you want and can be used to request data not available from the Standard API!
+            > If you don't need most of this data, please use shards instead. Shards allow you to request
+            > exactly what you want and can be used to request data not available from the Standard API!
             """
             url = wrapper.base_url + _ShardsQuery(("region", self.region_name), shards, kwargs).querystring()
             response: dict = wrapper.fetch_api_data(url)
