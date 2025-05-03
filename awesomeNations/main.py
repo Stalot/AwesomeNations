@@ -192,7 +192,7 @@ class AwesomeNations():
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
     
-        def set_auth(self, password: str = None, autologin: str = None):
+        def set_auth(self, password: str = None, autologin: str = None) -> None:
             if any((password, autologin)):
                 self.password = _Secret(password)
                 self.autologin = _Secret(autologin)
@@ -216,7 +216,7 @@ class AwesomeNations():
                     raise HTTPError(status_code)
 
         # DEPRECATED METHOD
-        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
             """
             # THIS METHOD IS DEPRECATED
             ## Use ```get_shards()``` instead!
@@ -239,7 +239,7 @@ class AwesomeNations():
             return response
 
         # Replacing get_public_shards()
-        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict:
+        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
             """
             Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
@@ -255,10 +255,12 @@ class AwesomeNations():
             response: dict = wrapper.fetch_api_data(url)
             return response
 
-        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, Any]:
+        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, dict[str, Any]]:
             """
             Executes private commands.
             """
+            if not isinstance(c, str):
+                raise ValueError(f"c must be type str, not {type(c).__name__}.")
             command = _PrivateCommand(self.nation_name,
                                       c,
                                       kwargs,
@@ -281,7 +283,7 @@ class AwesomeNations():
                      title: Optional[str] = None,
                      text: Optional[str] = None,
                      category: Optional[int] = None,
-                     subcategory: Optional[int] = None) -> dict[str, dict]:
+                     subcategory: Optional[int] = None) -> dict[str, dict[str, Any]]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -289,15 +291,26 @@ class AwesomeNations():
             ---
             
             Creates, edits and deletes dispatches.
+            
+            When adding or editing a dispatch, specify: `title`, `text`, `category` and `subcategory`.
+            When editing or removing a dispatch, you must also specify `id`.
             """
+            if action != "add" and action != "edit" and action != "remove":
+                raise ValueError(f"action must be 'add', 'edit' or 'remove', not '{action}'.")
             if not action == "add" and not id:
                 raise ValueError(f"action '{action}' needs a valid dispatch id!")
             if (action == "add" or action == "edit") and not all((title, text, category, subcategory)):
                 raise ValueError(f"action '{action}' needs a valid title, text, category and subcategory.")
 
-            if category and not type(category) == int:
+            if id and not isinstance(id, int):
+                raise ValueError(f"id must be int, not type '{type(id).__name__}'.")
+            if title and not isinstance(title, str):
+                raise ValueError(f"title must be str, not type '{type(title).__name__}'.")
+            if text and not isinstance(text, str):
+                raise ValueError(f"text must be str, not type '{type(text).__name__}'.")
+            if category and not isinstance(category, int):
                 raise ValueError(f"category must be int, not type '{type(category).__name__}'.")
-            if subcategory and not type(subcategory) == int:
+            if subcategory and not isinstance(subcategory, int):
                 raise ValueError(f"subcategory must be int, not type '{type(subcategory).__name__}'.")
             
             query_params = {
@@ -318,18 +331,21 @@ class AwesomeNations():
             token = prepare_response.get("nation").get("success")
             
             if not token:
-                raise ValueError(parser.parse_html_in_string(prepare_response["nation"]["error"]))
+                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
+                raise ValueError(reason)
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
-            if execute_response["nation"].get("error"):
-                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
+                raise ValueError(reason)
             
             return execute_response
 
         def rmbpost(self,
                      region: str,
-                     text: str) -> dict[str, dict]:
+                     text: str) -> dict[str, dict[str, Any]]:
             """
             # BETA:
             Currently in development. Subject to change without warning.
@@ -337,7 +353,12 @@ class AwesomeNations():
             ---
             
             Post to a regional RMB.
-            """                        
+            """
+            if not isinstance(region, str):
+                raise ValueError(f"region must be type str, not {type(region).__name__}.")
+            if not isinstance(text, str):
+                raise ValueError(f"text must be type str, not {type(text).__name__}.")
+
             query_params = {
                 "nation": self.nation_name,
                 "region": format_key(region, replace_empty="%20"),
@@ -354,8 +375,81 @@ class AwesomeNations():
             
             execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
             
-            if execute_response["nation"].get("error"):
-                raise ValueError(parser.parse_html_in_string(execute_response["nation"]["error"]))
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                raise ValueError(parser.parse_html_in_string(error))
+            
+            return execute_response
+
+        def giftcard(self,
+                     id: int,
+                     season: int,
+                     to: str) -> dict[str, dict[str, Any]]:
+            """
+            # BETA:
+            Currently in development. Subject to change without warning.
+            
+            ---
+            
+            Gift a Trading Card to someone else.
+            """         
+            if not isinstance(id, int):
+                raise ValueError(f"id must be type int, not {type(id).__name__}.")
+            if not isinstance(season, int):
+                raise ValueError(f"season must be type int, not {type(season).__name__}.")
+            if not isinstance(to, str):
+                raise ValueError(f"to must be type str, not {type(to).__name__}.")
+            query_params = {
+                "cardid": id,
+                "season": season,
+                "to": format_key(to, replace_empty="_"),
+            }
+            
+            c = _PrivateCommand(self.nation_name, "giftcard", query_params, wrapper.allow_beta)
+
+            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
+            token = prepare_response.get("nation").get("success")
+            
+            if not token:
+                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
+                raise ValueError(reason)
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
+            
+            error: Optional[str] = execute_response["nation"].get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
+                raise ValueError(reason)
+            
+            return execute_response
+
+        def answer_issue(self,
+                     id: int,
+                     option: int) -> dict[str, dict[str, Any]]:
+            """
+            Address an Issue.
+
+            To dismiss an issue, set `option` to -1 (Note that option id numbers
+            begin counting at zero).
+            """     
+            if not isinstance(id, int):
+                raise ValueError(f"id must be type int, not {type(id).__name__}.")
+            if not isinstance(option, int):
+                raise ValueError(f"option must be type int, not {type(option).__name__}.")
+                               
+            query_params: dict[str, int] = {
+                "issue": id,
+                "option": option,
+            }
+            
+            c = _PrivateCommand(self.nation_name, "issue", query_params, wrapper.allow_beta)
+            
+            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute"))
+            
+            error: Optional[str] = execute_response["nation"].get("issue").get("error")
+            if error:
+                reason = parser.parse_html_in_string(error)
+                raise ValueError(reason)
             
             return execute_response
 

@@ -1,8 +1,6 @@
-<p align="center">
-  <img src="https://i.imgur.com/yQ9gI82.png" />
-</p>
-
-<h1 align="center">AwesomeNations</h1>
+<h1 align="center">
+  <img src="https://i.imgur.com/xTBcBQd.png" alt="AwesomeNations logo"/>
+</h1>
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -26,17 +24,21 @@ Before start *cooking*, I highly recommend you **dive into documentation**. Yes,
 
 ## Summary 📚
 
-**AwesomeNations**
+### AwesomeNations
+
 - `get_api_latest_version()` -> Gets API latest version;
 - `get_daily_data_dumps()` -> Dowloads daily data dumps;
 - `get_world_assembly_shards()` -> Gets world assembly shards;
 - `get_world_shards()` -> Gets world API shards.
 
-**Nation**
-- `exists()` -> Checks if nation exists;
-- `get_shards()` -> Gets nation API shards.
+### Nation
 
-**Region**
+- `exists()` -> Checks if nation exists;
+- `get_shards()` -> Gets nation API shards;
+- `set_auth()` -> Sets nation authentication.
+
+### Region
+
 - `exists()` -> Checks if region exists;
 - `get_shards()` -> Gets region API shards.
 
