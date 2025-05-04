@@ -8,9 +8,12 @@ What's new:
 
 - **Nation** private commands;
 - **Nation** `set_auth()`: Sets Nation authentication;
+- **AwesomeNations** `get_wrapper_status()`: Gets wrapper data, such the number of requests seen;
+- **AwesomeNations** `set_user_agent()`: Sets AwesomeNations user_agent;
+- New ways to authenticate.
 - Shard validation, to prevent user from requesting shards that don't exist;
 - Overall internal organization upgrades;
-- New code examples: `prize_draw.py`, `publish_dispatch.py` and `context_managers.py`.
+- New code examples: `prize_draw.py`, `publish_dispatch.py`, `authentication.py` and `context_managers.py`.
 
 # </> 2.0.0 </>
 
