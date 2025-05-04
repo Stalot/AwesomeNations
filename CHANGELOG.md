@@ -10,7 +10,7 @@ What's new:
 - **Nation** `set_auth()`: Sets Nation authentication;
 - Shard validation, to prevent user from requesting shards that don't exist;
 - Overall internal organization upgrades;
-- New code examples: `prize_draw.py` and `publish_dispatch.py`.
+- New code examples: `prize_draw.py`, `publish_dispatch.py` and `context_managers.py`.
 
 # </> 2.0.0 </>
 

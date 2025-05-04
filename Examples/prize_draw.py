@@ -18,7 +18,7 @@ password = os.environ["MY_PASSWORD"]
 
 api = AwesomeNations("My application/1.0.0", # Replace this User-Agent with useful info.
                      allow_beta=True)
-nation = api.Nation("your nation name here!", password)
+nation = api.Nation("your nation name here!")
 region = api.Region("fullworthia")
 
 def pretty_name(name: str) -> str:
@@ -36,8 +36,9 @@ def grand_prize(card_id: int, card_season: int):
     
     print("winner:", prize_winner)
     
+    nation.set_auth(password)
     nation.gift_card(card_id, card_season, prize_winner)
-    
     nation.rmb_post(region.region_name, f"Congratulations [nation]{prize_winner}[/nation], [b]you won the prize draw![/b]\nYou will receive card number [i]{card_id}[/i], from season {card_season}.")
+    print("Done.")
 
 grand_prize()

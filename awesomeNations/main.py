@@ -192,6 +192,13 @@ class AwesomeNations():
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
     
+        def __enter__(self, *args, **kwargs):
+            return self
+        
+        def __exit__(self, exc_type, exc_value, traceback):
+            setattr(wrapper, "auth", None)
+            del self
+    
         def set_auth(self, password: str = None, autologin: str = None) -> None:
             """
             Sets Nation authentication.
@@ -465,6 +472,12 @@ class AwesomeNations():
         
         def __repr__(self):
             return f"Region(region_name='{self.region_name}')"
+        
+        def __enter__(self, *args, **kwargs):
+            return self
+        
+        def __exit__(self, exc_type, exc_value, traceback):
+            del self
         
         def exists(self) -> bool:
             """
