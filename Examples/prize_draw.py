@@ -16,7 +16,7 @@ import random
 load_dotenv()
 password = os.environ["MY_PASSWORD"]
 
-api = AwesomeNations("My application/1.0.0", # Replace this User-Agent with useful info.
+api = AwesomeNations("Trading Card Prize example", # Replace this User-Agent with useful info.
                      allow_beta=True)
 nation = api.Nation("your nation name here!")
 region = api.Region("fullworthia")

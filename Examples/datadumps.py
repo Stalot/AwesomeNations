@@ -8,7 +8,7 @@ from pathlib import Path
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
 
-api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+api = AwesomeNations("Daily Data Dumps example") # Replace this User-Agent with useful info.
 
 # Dowloads nations data dump
 folder_path: Path = Path("datadumps")

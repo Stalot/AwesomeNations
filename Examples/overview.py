@@ -19,7 +19,7 @@ from awesomeNations import AwesomeNations
 # Economy: Powerhouse
 # Political Freedom: Excellent
 
-api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+api = AwesomeNations("Nation overview example") # Replace this User-Agent with useful info.
 
 def search_nation():
     nation_name = str(input('Insert nation name: '))

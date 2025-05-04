@@ -83,7 +83,7 @@ class AwesomeNations():
                  api_version: int = 12,
                  log_level: Optional[int] = WARNING,
                  allow_beta: bool = False):
-        self.user_agent: str = user_agent
+        self.set_user_agent(user_agent)
         self.request_timeout: int | tuple = request_timeout
         self.ratelimit_sleep: bool = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
@@ -173,6 +173,28 @@ class AwesomeNations():
         url = "https://www.nationstates.net/cgi-bin/api.cgi?a=version"
         latest_version: int = int(wrapper.fetch_raw_data(url))
         return latest_version
+
+    def get_wrapper_status(self) -> dict[str, Any]:
+        """
+        Gets wrapper data, such the number of requests seen.
+        """
+        status: dict[str, Any] = {
+            "status": {
+                "ratelimit_requests_seen": getattr(wrapper, "ratelimit_requests_seen"),
+            }
+        }
+        return status
+
+    def set_user_agent(self, user_agent: str) -> None:
+        """
+        Sets AwesomeNations `user_agent`.
+        """
+        if not isinstance(user_agent, str):
+            raise ValueError(f"user_agent must be type string, not {type(user_agent).__name__}")
+        user_agent = user_agent.strip()
+        if len(user_agent.replace(" ", "")) < 7:
+            raise ValueError(f"'{user_agent}' is too short for a user_agent.")
+        setattr(self, "user_agent", user_agent)
 
     class Nation:
         """

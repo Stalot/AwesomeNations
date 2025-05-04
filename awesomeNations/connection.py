@@ -18,8 +18,15 @@ class _NSResponse():
         self.content: bytes = self._response.data
         self.status: int = self._response.status
         self.headers: HTTPHeaderDict = self._response.headers
-        self.encoding: str = self.headers.get("Content-Type").split(" ")[1].replace("charset=", "")
+        self.encoding = "UTF-8"
         self._parser = _AwesomeParser()
+        
+        content_encoding: str = self.headers.get("Content-Type")
+        if content_encoding:
+            try:
+                self.encoding = content_encoding.split(" ")[1].replace("charset=", "")
+            except:
+                pass
     
     def __repr__(self):
         return f"_NSResponse(response: HTTPResponse = {self._response})"
@@ -47,7 +54,7 @@ class _WrapperConnection():
         self.ratelimit_sleep: bool = None
         self.ratelimit_reset_time: int = None
         self.ratelimit_remaining: int = None
-        self.ratelimit_requests_seen: int = None
+        self.ratelimit_requests_seen: int = 0
         self.api_version: int = None
         self.allow_beta: bool = None
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
@@ -110,7 +117,7 @@ class _WrapperConnection():
             if self.ratelimit_remaining != None and self.ratelimit_remaining < 1:
                     logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
                     time.sleep(self.ratelimit_reset_time + 1)
-                    logger.info("Hibernation finished")
+                    logger.info("Ratelimit hibernation finished.")
 
     def _update_ratelimit_status(self, response: _NSResponse) -> None:
         self.ratelimit_remaining = int(response.get_header("Ratelimit-remaining"))
@@ -126,7 +133,6 @@ class _WrapperConnection():
             case _:
                 raise ValueError(f"Method '{method}' is invalid.")
         try:
-            time.sleep(0.1)
             ns_response = _NSResponse(self._pool_manager.request(method, url, headers=self.headers, timeout=self.request_timeout))
             logger.debug(f"{ns_response.status}")
             if ns_response.status != 200 and raise_exception:

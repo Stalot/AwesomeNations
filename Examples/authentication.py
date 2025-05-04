@@ -1,9 +1,6 @@
 from awesomeNations import AwesomeNations
 from dotenv import load_dotenv
-from datetime import datetime
-from pprint import pp
 import os
-import calendar
 
 #  █████╗ ██╗    ██╗███████╗███████╗ ██████╗ ███╗   ███╗███████╗
 # ██╔══██╗██║    ██║██╔════╝██╔════╝██╔═══██╗████╗ ████║██╔════╝
@@ -12,31 +9,20 @@ import calendar
 # ██║  ██║╚███╔███╔╝███████╗███████║╚██████╔╝██║ ╚═╝ ██║███████╗
 # ╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝ 
 
-# Get sensitive data from .env file
+# In order to authenticate, you need to insert a password or autologin
+# ⚠️ Don't store credentials in source code!
 load_dotenv()
-password = os.environ["MY_PASSWORD"]
+my_password = os.environ["MY_PASSWORD"]
 
-api = AwesomeNations("Managing dispatch example", # Replace this User-Agent with useful info.
-                     allow_beta=True)
-nation = api.Nation("your nation name here!", password)
+api = AwesomeNations("AwesomeNations authentication example") # Replace this User-Agent with useful info.
 
-def get_time() -> str:
-    """
-    Generates a pretty timestamp string based on the current time.
-    
-    Example:
-    ```
-    "13:37:09 on May 03, 2025."
-    ```
-    """
-    today = datetime.today()
-    month_name: str = calendar.month_name[today.month]
-    return f"{today.strftime(f"%H:%M:%S on {month_name} %d, %Y")}."
+# First way
+nation = api.Nation("nation_name", my_password, "or autologin...")
 
-# Make a dispatch:
-response = nation.dispatch("add",
-                           title="My awesome dispatch made with AwesomeNations",
-                           text=f"This dispatch was made using AwesomeNations 2.1.0, at {get_time()}",
-                           category=1,
-                           subcategory=100)
-pp(response) # Command response
+# Second way
+nation = api.Nation("nation_name")
+nation.set_auth(my_password, "or autologin...")
+
+# Third way
+with api.Nation("nation_name") as n:
+    n.set_auth(my_password, "or autologin...")

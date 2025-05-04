@@ -15,7 +15,7 @@ load_dotenv()
 nation1_password = os.environ["MY_PASSWORD"]
 nation2_password = os.environ["MY_PASSWORD2"]
 
-api = AwesomeNations("My application/1.0.0") # Replace this User-Agent with useful info.
+api = AwesomeNations("AwesomeNations 2.1.0 - context managers example") # Replace this User-Agent with useful info.
 nation = api.Nation
 
 with nation("nation-1") as n:
@@ -30,4 +30,4 @@ with nation("nation-2") as n:
 
 with api.Region("The Middle Pacific") as pacific:
     data = pacific.get_shards("officers")
-    pp(pacific)
+    pp(data)
