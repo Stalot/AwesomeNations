@@ -221,6 +221,10 @@ class AwesomeNations():
             setattr(wrapper, "auth", None)
             del self
     
+        def __getattribute__(self, name):
+            setattr(wrapper, "auth_target", object.__getattribute__(self, "nation_name"))
+            return object.__getattribute__(self, name)
+    
         def set_auth(self, password: str = None, autologin: str = None) -> None:
             """
             Sets Nation authentication.
@@ -228,8 +232,9 @@ class AwesomeNations():
             if any((password, autologin)):
                 self.password = _Secret(password)
                 self.autologin = _Secret(autologin)
-                new_auth = _NationAuth(self.password, self.autologin)
-                setattr(wrapper, 'auth', new_auth)
+                #new_auth = _NationAuth(self.password, self.autologin)
+                #setattr(wrapper, 'auth', new_auth)
+                wrapper.set_authentication(self.nation_name, self.password, self.autologin)
             else:
                 raise ValueError("At least a password or an autologin must be given.")
     

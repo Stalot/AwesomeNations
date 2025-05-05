@@ -1,7 +1,7 @@
 from awesomeNations.customMethods import join_keys, string_is_number
 from awesomeNations.exceptions import HTTPError, DataError, ConnectionError
 from awesomeNations.internalTools import _AwesomeParser
-from awesomeNations.internalTools import _NationAuth, _Secret
+from awesomeNations.internalTools import _NationAuth, _Secret, _AuthManager
 from typing import Optional, Literal, Any
 from urllib3 import BaseHTTPResponse, HTTPResponse, HTTPHeaderDict
 from pprint import pprint as pp
@@ -63,6 +63,8 @@ class _WrapperConnection():
                                                 self.headers,
                                                 retries=False)
         self.auth: Optional[_NationAuth] = None
+        self.authManager = _AuthManager()
+        self.auth_target: str = None
 
     def setup(self, **kwargs) -> None:
         """
@@ -98,6 +100,9 @@ class _WrapperConnection():
         self._process_response(response)
         
         return response.get_raw_content()
+
+    def set_authentication(self, id: str, password: Optional[_Secret] = None, autologin: Optional[_Secret] = None):
+        self.authManager.update_auth(id, password, autologin)
 
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
         url = url.format(v=self.api_version)
@@ -142,18 +147,25 @@ class _WrapperConnection():
             raise ConnectionError(e)
 
     def _update_auth(self, response: _NSResponse = None) -> None:
-        x_pin_header: int | None = response.get_header("X-Pin") if response else None
+        x_pin_header: Optional[int] = _Secret(response.get_header("X-Pin")) if response else None
         
         # Updates self.auth X-Pin if necessary (for quick sucessive requests):
-        if self.auth:
-            if x_pin_header:
-                if self.auth.xpin != x_pin_header:
-                    self.auth.xpin = _Secret(x_pin_header)
-            self.headers.update(self.auth.get())
+        #if self.auth:
+        #    if x_pin_header:
+        #        if self.auth.xpin != x_pin_header:
+        #            self.auth.xpin = _Secret(x_pin_header)
+        #    self.headers.update(self.auth.get())
+        
+        self.authManager.update_auth(self.auth_target, xpin=x_pin_header)
+        self.headers.update(self.authManager.get(self.auth_target).get())
 
     def _process_response(self, response: _NSResponse) -> None:     
         self._update_auth(response)
         self._update_ratelimit_status(response)
 
 if __name__ == "__main__":
-    ...
+    wrapper = _WrapperConnection()
+    wrapper.set_authentication("orlys", _NationAuth(_Secret("12345")))
+    wrapper.set_authentication("dives_patriae", _NationAuth(_Secret("6994")))
+    wrapper.set_authentication("ponytus", _NationAuth(_Secret("my_momiscringy")))
+    pp(wrapper.authentications["orlys"])
