@@ -83,7 +83,6 @@ class AwesomeNations():
                  api_version: int = 12,
                  log_level: Optional[int] = WARNING,
                  allow_beta: bool = False):
-        self.set_user_agent(user_agent)
         self.request_timeout: int | tuple = request_timeout
         self.ratelimit_sleep: bool = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
@@ -91,19 +90,11 @@ class AwesomeNations():
         self.log_level: Optional[int] = log_level
         self.allow_beta = allow_beta
 
-        headers: dict = {
-        "User-Agent": self.user_agent,
+        self._wrapper_headers: dict = {
         "Cache-Control": "no-cache",
         }
         
-        wrapper.setup(
-            headers=headers,
-            request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout),
-            ratelimit_sleep = self.ratelimit_sleep,
-            ratelimit_reset_time = self.ratelimit_reset_time,
-            api_version = self.api_version,
-            allow_beta = self.allow_beta
-        )
+        self.set_user_agent(user_agent)
         
         if self.log_level is None:
             logger.disabled = True
@@ -111,6 +102,14 @@ class AwesomeNations():
             logger.level = self.log_level
         else:
             raise ValueError(f"Invalid {type(self.log_level).__name__} '{self.log_level}', log_level must be an int (to change level) or None (to disable logging)")
+        
+        wrapper.setup(
+            request_timeout = Timeout(connect=self.request_timeout[0], read=self.request_timeout[1]) if type(self.request_timeout) is tuple else int(self.request_timeout),
+            ratelimit_sleep = self.ratelimit_sleep,
+            ratelimit_reset_time = self.ratelimit_reset_time,
+            api_version = self.api_version,
+            allow_beta = self.allow_beta
+        )
 
     def __repr__(self):
         return f"AwesomeNations(user_agent='{self.user_agent}', request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level}, allow_beta={self.allow_beta})"
@@ -194,7 +193,9 @@ class AwesomeNations():
         user_agent = user_agent.strip()
         if len(user_agent.replace(" ", "")) < 7:
             raise ValueError(f"'{user_agent}' is too short for a user_agent.")
-        setattr(self, "user_agent", user_agent)
+        #setattr(self, "user_agent", user_agent)
+        self._wrapper_headers.update({"User-Agent": user_agent})
+        wrapper.setup(headers=self._wrapper_headers)
 
     class Nation:
         """
