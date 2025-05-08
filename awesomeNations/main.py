@@ -145,7 +145,9 @@ class AwesomeNations():
         dumps = _DailyDataDumps()
         return dumps.dowload(dumps.get_dump(type), filepath)
 
-    def get_world_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
+    def get_world_shards(self,
+                         shards: str | tuple[str, ...] | list[str],
+                         **kwargs) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the World API.
         """
@@ -155,7 +157,9 @@ class AwesomeNations():
         response: dict = wrapper.fetch_api_data(url)
         return response
 
-    def get_world_assembly_shards(self, shards: str | tuple[str] | list[str], **kwargs) -> dict:
+    def get_world_assembly_shards(self,
+                                  shards: str | tuple[str, ...] | list[str],
+                                  **kwargs) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the World Assembly API.
         """
@@ -164,7 +168,6 @@ class AwesomeNations():
         council_id = kwargs["council_id"]
         kwargs.pop("council_id")
         url = wrapper.base_url + _ShardsQuery(("wa", council_id), shards, kwargs).querystring()
-        print(url)
         response: dict = wrapper.fetch_api_data(url)
         return response
 
@@ -209,7 +212,7 @@ class AwesomeNations():
             self.autologin: Optional[_Secret] = _Secret(autologin) if autologin else None
             
             if any((password, autologin)):
-                self.set_auth(self.password.reveal() if password else None, self.autologin.reveal() if autologin else None)
+                self.set_auth(self.password.reveal() if password else password, self.autologin.reveal() if autologin else autologin)
 
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
@@ -218,7 +221,8 @@ class AwesomeNations():
             return self
         
         def __exit__(self, exc_type, exc_value, traceback):
-            setattr(wrapper, "auth", None)
+            #setattr(wrapper, "auth", None)
+            wrapper.authManager.forget(self.nation_name)
             del self
     
         def __getattribute__(self, name):
@@ -234,7 +238,7 @@ class AwesomeNations():
                 self.autologin = _Secret(autologin)
                 #new_auth = _NationAuth(self.password, self.autologin)
                 #setattr(wrapper, 'auth', new_auth)
-                wrapper.set_authentication(self.nation_name, self.password, self.autologin)
+                wrapper.authManager.update_auth(self.nation_name, self.password, self.autologin)
             else:
                 raise ValueError("At least a password or an autologin must be given.")
     
@@ -253,7 +257,9 @@ class AwesomeNations():
                     raise HTTPError(status_code)
 
         # DEPRECATED METHOD
-        def get_public_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
+        def get_public_shards(self,
+                              shards: str | tuple[str, ...] | list[str] = None,
+                              **kwargs) -> dict[str, dict[str, Any]]:
             """
             # THIS METHOD IS DEPRECATED
             ## Use ```get_shards()``` instead!
@@ -276,7 +282,9 @@ class AwesomeNations():
             return response
 
         # Replacing get_public_shards()
-        def get_shards(self, shards: Optional[str | tuple[str] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
+        def get_shards(self,
+                       shards: str | tuple[str, ...] | list[str] = None,
+                       **kwargs) -> dict[str, dict[str, Any]]:
             """
             Gets one or more shards from the requested nation, returns the standard API if no shards provided.
             
@@ -292,7 +300,20 @@ class AwesomeNations():
             response: dict = wrapper.fetch_api_data(url)
             return response
 
-        def execute_command(self, c: Literal["issue", "giftcard", "dispatch", "rmbpost"], **kwargs) -> dict[str, dict[str, Any]]:
+        def is_authenticated(self) -> bool:
+            """
+            Checks if nation has a valid authentication.
+            """
+            try:
+                wrapper.authManager.get(self.nation_name)
+                self.get_shards("ping")
+                return True
+            except (KeyError, HTTPError):
+                return False
+
+        def execute_command(self,
+                            c: Literal["issue", "giftcard", "dispatch", "rmbpost"],
+                            **kwargs) -> dict[str, dict[str, Any]]:
             """
             Executes private commands.
             """

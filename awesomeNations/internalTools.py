@@ -163,8 +163,8 @@ class _NationAuth():
     
     def get(self) -> dict[str]:
         auth_headers: dict[str] = {
-            "X-Password": self.password.reveal() if self.password.reveal() else "",
-            "X-Autologin": self.autologin.reveal() if self.autologin.reveal() else "",
+            "X-Password": self.password.reveal() if self.password else "",
+            "X-Autologin": self.autologin.reveal() if self.autologin else "",
             "X-Pin": self.xpin.reveal() if self.xpin else ""
         }
         return auth_headers

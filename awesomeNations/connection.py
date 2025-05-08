@@ -101,9 +101,6 @@ class _WrapperConnection():
         
         return response.get_raw_content()
 
-    def set_authentication(self, id: str, password: Optional[_Secret] = None, autologin: Optional[_Secret] = None):
-        self.authManager.update_auth(id, password, autologin)
-
     def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
         url = url.format(v=self.api_version)
         
