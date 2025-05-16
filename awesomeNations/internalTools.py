@@ -152,22 +152,50 @@ class _NationAuth():
         self.password = password
         self.autologin = autologin
         self.xpin: Optional[_Secret] = None
+
+    def __repr__(self):
+        return f"_NationAuth({self.password}, {self.autologin})"
     
-    def get(self) -> dict[str, str]:
-        """
-        **WARNING**: This method **reveals** sensitive info, don't print it!
-        
-        ***
-        
-        Gets _NationAuth data.
-        """
-        auth_headers: dict[str, Any] = {
-            "X-Password": self.password,
-            "X-Autologin": self.autologin,
-            "X-Pin": self.xpin
+    def get(self) -> dict[str]:
+        auth_headers: dict[str] = {
+            "X-Password": self.password.reveal() if self.password else "",
+            "X-Autologin": self.autologin.reveal() if self.autologin else "",
+            "X-Pin": self.xpin.reveal() if self.xpin else ""
         }
-        auth_headers = {k: v.reveal() for k, v in auth_headers.items() if v != None and isinstance(v, _Secret)}
         return auth_headers
+
+class _AuthManager():
+    """
+    Manage authentications.
+    """
+    def __init__(self):
+        self.authentications: dict[str, _NationAuth] = {}
+
+    def update_auth(self,
+                    id: str,
+                    password: Optional[_Secret] = None,
+                    autologin: Optional[_Secret] = None,
+                    xpin: Optional[_Secret] = None):
+        if self.authentications.get(id):
+            if self.authentications[id].password != password and password:
+                self.authentications[id].password = password
+            if self.authentications[id].autologin != autologin and autologin:
+                self.authentications[id].autologin = autologin
+            if self.authentications[id].xpin != xpin and xpin:
+                self.authentications[id].xpin = xpin
+        else:
+            new_auth = _NationAuth(password, autologin)
+            new_auth.xpin = xpin
+            self.authentications.update({id: new_auth})
+    
+    def get_all(self):
+        return self.authentications
+
+    def get(self, id):
+        return self.authentications[id]
+    
+    def forget(self, id):
+        self.authentications.pop(id)
 
 class _PrivateCommand():
     def __init__(self,
@@ -248,18 +276,14 @@ class _AwesomeParser():
             return key, value
 
 if __name__ == "__main__":
-    shards_query = _ShardsQuery(('nation', 'orlys'),
-                                ["name", "fullname"],
-                                {"scale": [68, 54, 4]})
-    print(f"{shards_query.querystring()=}")
+    authManager = _AuthManager()
     
-    private_command_query = _PrivateCommand("orlys",
-                                            "rmbpost",
-                                            {"text": "Hello, world!",
-                                             "region": "Fullworthia"},
-                                            allow_beta=True)
-    print(f"{private_command_query.command("prepare")=}")
-    print(f"{private_command_query.command("execute")=}")
+    authManager.update_auth("orlys", password=_Secret("12345"), xpin=_Secret("343535323"))
+    authManager.update_auth("orlys", password=_Secret("1234523423"), xpin=None)
+    authManager.update_auth("dives_patriae", password=_Secret("12345"), xpin=_Secret("343535324"))
+    authManager.update_auth("fullworthia", password=_Secret("12345"), xpin=_Secret("343535325"))
+    authManager.update_auth("ponytus", password=_Secret("12345"), xpin=_Secret("343535326"))
     
-    nation_auth = _NationAuth(_Secret("my_awesome_password1234"))
-    print(f"{nation_auth.get()=}")
+    authManager.forget("ponytus")
+    
+    pp(authManager.get_all())
