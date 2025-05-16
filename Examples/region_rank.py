@@ -11,10 +11,10 @@ api = AwesomeNations("Region score rank example") # Replace this User-Agent with
 region = api.Region('The Pacific')
 
 def pretty_name(name: str) -> str:
-    name = name.replace("_", " ").split(" ")
-    name = [word.capitalize() for word in name]
-    name = " ".join(name)
-    return name
+    new_name = name.replace("_", " ").split(" ")
+    new_name = [word.capitalize() for word in name]
+    new_name = " ".join(name)
+    return new_name
 
 def pretty_rank(rank_number: str, digits: int = 2) -> str:
     rank_number = str(rank_number)

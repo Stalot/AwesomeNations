@@ -1,7 +1,7 @@
-from awesomeNations.customMethods import format_key, string_is_number, join_keys
+from awesomeNations.customMethods import format_key, string_is_number, join_keys, gen_params
 from awesomeNations.exceptions import DataError
 from pprint import pprint as pp
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 import xmltodict
 import logging
 from pathlib import Path
@@ -58,8 +58,8 @@ class _Secret():
 class _ShardsQuery():
     def __init__(self,
                  api_family: tuple[Literal["nation", "region", "world", "wa"], str | None],
-                 shards: Optional[str | list[str]] = None, 
-                 params: Optional[dict[str, str | list[str]]] = None):
+                 shards: Optional[str | tuple[str, ...] | list[str]] = None, 
+                 params: Optional[dict[str, Any]] = None):
         if type(api_family) is not tuple:
             raise ValueError(f"api_family must be tuple, not '{type(api_family).__name__}'")
         
@@ -72,18 +72,13 @@ class _ShardsQuery():
             "world": ['banner', 'census', 'censusid', 'censusdesc', 'censusname', 'censusranks', 'censusscale', 'censustitle', 'dispatch', 'dispatchlist', 'faction', 'factions', 'featuredregion', 'happenings', 'lasteventid', 'nations', 'newnations', 'newnationdetails', 'numnations', 'numregions', 'poll', 'regions', 'regionsbytag', 'tgqueue'],
             "wa": ['numnations', 'numdelegates', 'delegates', 'members', 'happenings', 'proposals', 'resolution', 'voters', 'votetrack', 'dellog', 'delvotes', 'lastresolution']
         }
-        
+                
         self._validate_shards(self.query_shards) # Checks if shard(s) exists, if not, raises ValueError.
 
-        if shards:
-            if type(shards) is not str:
-                self.query_shards = join_keys(shards)
-
-        if params and type(params) is not str:
-            for item in params:
-                if type(params[item]) is not str:
-                    params[item] = join_keys(params[item])
-            self.query_params = join_keys([f"{p}={params[p]}" for p in params], ";")
+        if self.query_shards and not isinstance(self.query_shards, str):
+            self.query_shards = join_keys(self.query_shards)
+        if self.query_params:
+            self.query_params = gen_params(self.query_params, True)
 
     def querystring(self):
         querystring: str = "?"
@@ -96,7 +91,7 @@ class _ShardsQuery():
             querystring += f";{self.query_params}"
         return querystring
 
-    def _validate_shards(self, shards: str | list[str]) -> None:
+    def _validate_shards(self, shards: Optional[str | tuple[str, ...] | list[str]]) -> None:
         valid = self._valid_shards[self.api_family[0]]
         if type(shards) == str:
             if not shards in valid:
@@ -158,19 +153,27 @@ class _NationAuth():
         self.autologin = autologin
         self.xpin: Optional[_Secret] = None
     
-    def get(self) -> dict[str]:
-        auth_headers: dict[str] = {
-            "X-Password": self.password.reveal() if self.password.reveal() else "",
-            "X-Autologin": self.autologin.reveal() if self.autologin.reveal() else "",
-            "X-Pin": self.xpin.reveal() if self.xpin else ""
+    def get(self) -> dict[str, str]:
+        """
+        **WARNING**: This method **reveals** sensitive info, don't print it!
+        
+        ***
+        
+        Gets _NationAuth data.
+        """
+        auth_headers: dict[str, Any] = {
+            "X-Password": self.password,
+            "X-Autologin": self.autologin,
+            "X-Pin": self.xpin
         }
+        auth_headers = {k: v.reveal() for k, v in auth_headers.items() if v != None and isinstance(v, _Secret)}
         return auth_headers
 
 class _PrivateCommand():
     def __init__(self,
                  nation_name: str,
-                 command: str, 
-                 params: Optional[dict[str, str | list[str]]],
+                 command: str,
+                 params: dict[str, Any],
                  allow_beta: bool = False):        
         self.valid = ["issue", "giftcard", "dispatch", "rmbpost"]
         self.not_prepare = ["issue"] # Commands that don't need preparing.
@@ -183,22 +186,16 @@ class _PrivateCommand():
         self.command_query = command
         self.command_params = params
         
-        if type(command) is not str:
+        if not isinstance(command, str):
             raise ValueError(f"command must be str, not '{type(command).__name__}'")
         if command not in self.valid:
             raise ValueError(f"Not found a private command called '{command}'.")
-        if len(params) < 1:
+        if isinstance(params, dict) and len(params.keys()) < 1:
             raise ValueError("Private commands need extra parameters.")
-
-        if type(params) is not str:
-            for item in params:
-                if type(params[item]) is not str:
-                    params[item] = join_keys(params[item])
-            self.command_params = join_keys([f"{p}={params[p]}" for p in params], "&")
 
     def command(self,
                         mode: Literal["prepare", "execute"] = "prepare",
-                        token: str = None):
+                        token: Optional[str] = None):
         command_url = self._querystring() + f"&mode={mode}"
         command_url += f"&token={token}" if token else ""
         command_url += "&v={v}"
@@ -207,7 +204,7 @@ class _PrivateCommand():
     def _querystring(self):
         querystring: str = "?"
         querystring += f"nation={self.nation_name}&c={self.command_query}"
-        querystring += f"&{self.command_params}"
+        querystring += f"&{gen_params(self.command_params, True)}"
         return querystring
 
 class _AwesomeParser():
@@ -222,7 +219,7 @@ class _AwesomeParser():
             parsed_xml: dict = xmltodict.parse(content, encoding, postprocessor=self.xml_postprocessor)
             return json.loads(json.dumps(parsed_xml))
         except Exception as e:
-            raise DataError("XML Data", e)
+            raise DataError("XML Data", str(e))
 
     def parse_html_in_string(self, string: str):
         try:
@@ -233,7 +230,7 @@ class _AwesomeParser():
                 string = string.replace("<br>", "\n")
             for tag in tags:
                 #print(tag.attrs["href"])
-                string = string.replace(str(tag), str(tag.text if not tag.name == "a" else f"{tag.text}: '{tag.attrs["href"]}'"))
+                string = string.replace(str(tag), str(tag.text if not tag.name == "a" else f"{tag.text}: '{tag.attrs["href"]}'")) # type: ignore
             # Remove remenants of undetected HTML tags
             string = re.sub(r"<[^>]+>", "", string)
             return string
@@ -243,18 +240,26 @@ class _AwesomeParser():
     def xml_postprocessor(self, path, key: str, value: str):
         key = format_key(key, replace_empty="_", delete_not_alpha=True)
         try:
-            formatted_key: str = key
-            formatted_value: str = value
-
-            if string_is_number(formatted_value):
-                formatted_value: complex = complex(formatted_value).real
+            if string_is_number(value):
+                formatted_value: complex = complex(value).real
                 formatted_value = int(formatted_value) if formatted_value.is_integer() else formatted_value
-            return formatted_key, formatted_value
+            return key, value
         except (ValueError, TypeError):
             return key, value
 
 if __name__ == "__main__":
-    parser = _AwesomeParser()
-    html_data = """New factbook posted! <a href="/nation=orlys/detail=factbook/id=2650467">View Your Factbook</a>"""
-    parsed_data = parser.parse_html_in_string(html_data)
-    print(parsed_data)
+    shards_query = _ShardsQuery(('nation', 'orlys'),
+                                ["name", "fullname"],
+                                {"scale": [68, 54, 4]})
+    print(f"{shards_query.querystring()=}")
+    
+    private_command_query = _PrivateCommand("orlys",
+                                            "rmbpost",
+                                            {"text": "Hello, world!",
+                                             "region": "Fullworthia"},
+                                            allow_beta=True)
+    print(f"{private_command_query.command("prepare")=}")
+    print(f"{private_command_query.command("execute")=}")
+    
+    nation_auth = _NationAuth(_Secret("my_awesome_password1234"))
+    print(f"{nation_auth.get()=}")

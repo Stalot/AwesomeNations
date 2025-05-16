@@ -13,15 +13,15 @@ import time
 logger = logging.getLogger("AwesomeLogger")
 
 class _NSResponse():
-    def __init__(self, response: HTTPResponse):
-        self._response: HTTPResponse = response
+    def __init__(self, response: BaseHTTPResponse):
+        self._response: BaseHTTPResponse = response
         self.content: bytes = self._response.data
         self.status: int = self._response.status
         self.headers: HTTPHeaderDict = self._response.headers
         self.encoding = "UTF-8"
         self._parser = _AwesomeParser()
         
-        content_encoding: str = self.headers.get("Content-Type")
+        content_encoding: Optional[str] = self.headers.get("Content-Type")
         if content_encoding:
             try:
                 self.encoding = content_encoding.split(" ")[1].replace("charset=", "")
@@ -44,19 +44,19 @@ class _NSResponse():
         """
         return self.content.decode(self.encoding).strip()
     
-    def get_header(self, name: str, default = None):
+    def get_header(self, name: str, default = None) -> Optional[Any]:
         return self.headers.get(name, default)
 
 class _WrapperConnection():
     def __init__(self):
-        self.headers: dict = None
-        self.request_timeout: int | tuple = None
-        self.ratelimit_sleep: bool = None
-        self.ratelimit_reset_time: int = None
-        self.ratelimit_remaining: int = None
+        self.headers: dict[str, str] = {}
+        self.request_timeout: int | tuple = (10, 10)
+        self.ratelimit_sleep: bool = True
+        self.ratelimit_reset_time: int = 30
+        self.ratelimit_remaining: int = 50
         self.ratelimit_requests_seen: int = 0
-        self.api_version: int = None
-        self.allow_beta: bool = None
+        self.api_version: int = 12
+        self.allow_beta: bool = False
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
         
         self._pool_manager = urllib3.PoolManager(8,
@@ -76,7 +76,7 @@ class _WrapperConnection():
 
     def fetch_api_data(self,
                        url: str = 'https://www.nationstates.net/',
-                       query_parameters: Optional[dict] = None) -> dict:
+                       query_parameters: Optional[dict] = None) -> dict[str, dict[str, str | int | float]]:
         """
         This fetches API data and automatically parses it: (xml response -> python dictionary)
         """
@@ -120,11 +120,11 @@ class _WrapperConnection():
                     logger.info("Ratelimit hibernation finished.")
 
     def _update_ratelimit_status(self, response: _NSResponse) -> None:
-        self.ratelimit_remaining = int(response.get_header("Ratelimit-remaining"))
-        self.ratelimit_requests_seen = int(response.get_header("X-ratelimit-requests-seen"))
+        self.ratelimit_remaining = int(str(response.get_header("Ratelimit-remaining", 50)))
+        self.ratelimit_requests_seen = int(str(response.get_header("X-ratelimit-requests-seen", 0)))
         self._check_api_ratelimit()
 
-    def _make_request(self, method: str = "GET", url: str = None, raise_exception: bool = True) -> _NSResponse:
+    def _make_request(self, method: str = "GET", url: str = "www.example.com", raise_exception: bool = True) -> _NSResponse:
         match method:
             case "GET":
                 logger.debug(f"GET: {url}")
@@ -139,16 +139,16 @@ class _WrapperConnection():
                 raise HTTPError(ns_response.status)
             return ns_response
         except urllib3.exceptions.NameResolutionError as e:
-            raise ConnectionError(e)
+            raise ConnectionError(str(e))
 
-    def _update_auth(self, response: _NSResponse = None) -> None:
-        x_pin_header: int | None = response.get_header("X-Pin") if response else None
+    def _update_auth(self, response: Optional[_NSResponse] = None) -> None:
+        x_pin_header: Optional[int] = response.get_header("X-Pin") if response else None
         
         # Updates self.auth X-Pin if necessary (for quick sucessive requests):
         if self.auth:
             if x_pin_header:
                 if self.auth.xpin != x_pin_header:
-                    self.auth.xpin = _Secret(x_pin_header)
+                    self.auth.xpin = _Secret(str(x_pin_header))
             self.headers.update(self.auth.get())
 
     def _process_response(self, response: _NSResponse) -> None:     

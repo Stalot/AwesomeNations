@@ -22,10 +22,10 @@ nation = api.Nation("your nation name here!")
 region = api.Region("fullworthia")
 
 def pretty_name(name: str) -> str:
-    name = name.replace("_", " ").split(" ")
-    name = [word.capitalize() for word in name]
-    name = " ".join(name)
-    return name
+    new_name = name.replace("_", " ").split(" ")
+    new_name = [word.capitalize() for word in name]
+    new_name = " ".join(name)
+    return new_name
 
 def grand_prize(card_id: int, card_season: int):
     region_data: dict = region.get_shards(("nations", "numnations"))["region"]
@@ -41,4 +41,4 @@ def grand_prize(card_id: int, card_season: int):
     nation.rmb_post(region.region_name, f"Congratulations [nation]{prize_winner}[/nation], [b]you won the prize draw![/b]\nYou will receive card number [i]{card_id}[/i], from season {card_season}.")
     print("Done.")
 
-grand_prize()
+grand_prize(0, 0) # Provide if and season number!

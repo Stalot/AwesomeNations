@@ -14,11 +14,11 @@ def string_is_number(string: str) -> bool:
     except ValueError:
         return False
 
-def format_key(string: str = None, uppercase: bool = False, replace_empty: str = None, delete_not_alpha: bool = False) -> str:
+def format_key(string: str, uppercase: bool = False, replace_empty: Optional[str] = None, delete_not_alpha: bool = False) -> str:
     """
     Formats a string.
     """
-    formatted_string = None
+    formatted_string = string
     if string:
         if delete_not_alpha:
             for char in string:
@@ -38,7 +38,7 @@ def format_key(string: str = None, uppercase: bool = False, replace_empty: str =
         formatted_string = string
     return formatted_string
 
-def join_keys(keys: list[str] | tuple[str] = ['hello', 'world'], separator: str = '+') -> str:
+def join_keys(keys: tuple[str, ...] | list[str] = ['hello', 'world'], separator: str = '+') -> str:
     """
     Joins multiple string keys in a single string.
     """
@@ -66,6 +66,17 @@ def get_index(object: tuple | list, index: int, default: Optional[Any] = None) -
         return object[index]
     except IndexError:
         return default
+
+def gen_params(dict_data: Optional[dict[str, Any]] = None, join: bool = False, **kwargs: Any) -> Any:
+    query = dict_data if dict_data else kwargs
+    query_params: dict[str, Any] = {key: str(join_keys(value, "+") if isinstance(value, list) else value).replace(" ", "%20") for key, value in query.items() if value != None}
+    #for k, v in query_params.items():
+    #    if isinstance(v, list):
+    #        query_params[k] = join_keys(v)
+    if join:
+        parsed_params: list[str] = [f"{k}={v}" for k, v in query_params.items()]
+        return join_keys(parsed_params, ";")
+    return query_params
 
 if __name__ == "__main__":
     ...

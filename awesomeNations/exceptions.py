@@ -1,4 +1,5 @@
 from random import random
+from typing import Optional
 
 # This is probably being removed because it's not professional, makes the error message look
 # more confusing or even ANNOYING, instead of actually motivating who is reading it.
@@ -37,7 +38,7 @@ def motivational_quotes() -> str:
     index = int(len(quotes) * random())
     return quotes[index]
 
-def status_code_context(status_code: int = None) -> str | None:
+def status_code_context(status_code: int) -> Optional[str]:
     common_status_codes: dict = {
         400: "Bad Request",
         401: "Unauthorized",
@@ -52,7 +53,7 @@ def status_code_context(status_code: int = None) -> str | None:
         504: "Gateway Timeout",
     }
     
-    output: str | None = common_status_codes.get(status_code)
+    output: Optional[str] = common_status_codes.get(status_code)
     return output
 
 class HTTPError(Exception):
@@ -82,4 +83,4 @@ class DataError(Exception):
         super().__init__(message)
 
 if __name__ == "__main__":
-    raise ConnectionError(500)
+    raise ConnectionError("500")
