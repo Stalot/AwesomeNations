@@ -18,10 +18,10 @@ class _Secret():
     
     `value` is the value to be stored. If `single_use` is `True`, the value will be set to ``None`` after being revealed once.
     """
-    def __init__(self, value: str, single_use: bool = False):
-        if type(value) is _Secret:
+    def __init__(self, value: Any, single_use: bool = False):
+        if isinstance(value, _Secret):
             raise ValueError("You can't have a _Secret inside another _Secret.")
-        self._value: Optional[str] = str(value) if value else None
+        self._value: Any = value
         self.single_use: bool = single_use
     
     def __str__(self):
@@ -48,7 +48,7 @@ class _Secret():
             return object.__getattribute__(self, "_value") == object.__getattribute__(other, "_value")
         return object.__getattribute__(self, "_value") == other
 
-    def reveal(self) -> Optional[str]:
+    def reveal(self) -> Optional[Any]:
         try:
             return object.__getattribute__(self, "_value")
         finally:
@@ -156,12 +156,20 @@ class _NationAuth():
     def __repr__(self):
         return f"_NationAuth({self.password}, {self.autologin})"
     
-    def get(self) -> dict[str]:
-        auth_headers: dict[str] = {
-            "X-Password": self.password.reveal() if self.password else "",
-            "X-Autologin": self.autologin.reveal() if self.autologin else "",
-            "X-Pin": self.xpin.reveal() if self.xpin else ""
+    def get(self) -> dict[str, str]:
+        """
+        **WARNING**: This method **reveals** sensitive info, don't print it!
+        
+        ***
+        
+        Gets _NationAuth data.
+        """
+        auth_headers: dict[str, Any] = {
+            "X-Password": self.password,
+            "X-Autologin": self.autologin,
+            "X-Pin": self.xpin
         }
+        auth_headers = {k: v.reveal() for k, v in auth_headers.items() if v != None and isinstance(v, _Secret)}
         return auth_headers
 
 class _AuthManager():

@@ -150,7 +150,7 @@ class AwesomeNations():
 
     def get_world_shards(self,
                          shards: str | tuple[str, ...] | list[str],
-                         **kwargs) -> dict[str, dict[str, Any]]:
+                         **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the World API.
         """
@@ -162,7 +162,7 @@ class AwesomeNations():
 
     def get_world_assembly_shards(self,
                                   shards: str | tuple[str, ...] | list[str],
-                                  **kwargs) -> dict[str, dict[str, Any]]:
+                                  **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the World Assembly API.
         """
@@ -213,11 +213,22 @@ class AwesomeNations():
                      password: Optional[str] = None,
                      autologin: Optional[str] = None) -> None:
             self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            self.password: Optional[_Secret] = _Secret(password) if password else None
-            self.autologin: Optional[_Secret] = _Secret(autologin) if autologin else None
-            
-            if any((password, autologin)):
-                self.set_auth(self.password.reveal() if password else password, self.autologin.reveal() if autologin else autologin)
+            self.password: Optional[_Secret] = None
+            self.autologin: Optional[_Secret] = None
+
+            if password:
+                if not isinstance(password, str):
+                    raise ValueError(f"password must be type str, not {type(password).__name__}.")
+                self.password = _Secret(password)
+            if autologin:
+                if not isinstance(autologin, str):
+                    raise ValueError(f"autologin must be type str, not {type(autologin).__name__}.")
+                self.autologin = _Secret(autologin)
+
+            auth_password: Optional[str] = self.password.reveal() if self.password and isinstance(self.password, _Secret) else None
+            auth_autologin: Optional[str] = self.autologin.reveal() if self.autologin and isinstance(self.autologin, _Secret) else None
+            if any((auth_password, auth_autologin)):
+                self.set_auth(auth_password, auth_autologin)
 
         def __repr__(self):
             return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
@@ -234,17 +245,17 @@ class AwesomeNations():
             setattr(wrapper, "auth_target", object.__getattribute__(self, "nation_name"))
             return object.__getattribute__(self, name)
     
-        def set_auth(self, password: str = None, autologin: str = None) -> None:
+        def set_auth(self, password: Optional[str] = None, autologin: Optional[str] = None) -> None:
             """
             Sets Nation authentication.
             """
             if password:
                 self.password = _Secret(password)
-            elif autologin:
+            if autologin:
                 self.autologin = _Secret(autologin)
                 #new_auth = _NationAuth(self.password, self.autologin)
                 #setattr(wrapper, 'auth', new_auth)
-            else:
+            if not password and not autologin:
                 raise ValueError("At least a password or an autologin must be given.")
             wrapper.authManager.update_auth(self.nation_name, self.password, self.autologin)
     
@@ -264,7 +275,7 @@ class AwesomeNations():
 
         # DEPRECATED METHOD
         def get_public_shards(self,
-                              shards: str | tuple[str, ...] | list[str] = None,
+                              shards: Optional[str | tuple[str, ...] | list[str]] = None,
                               **kwargs) -> dict[str, dict[str, Any]]:
             """
             # THIS METHOD IS DEPRECATED
@@ -289,7 +300,7 @@ class AwesomeNations():
 
         # Replacing get_public_shards()
         def get_shards(self,
-                       shards: str | tuple[str, ...] | list[str] = None,
+                       shards: Optional[str | tuple[str, ...] | list[str]] = None,
                        **kwargs) -> dict[str, dict[str, Any]]:
             """
             Gets one or more shards from the requested nation, returns the standard API if no shards provided.

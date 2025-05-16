@@ -62,9 +62,8 @@ class _WrapperConnection():
         self._pool_manager = urllib3.PoolManager(8,
                                                 self.headers,
                                                 retries=False)
-        self.auth: Optional[_NationAuth] = None
         self.authManager = _AuthManager()
-        self.auth_target: str = None
+        self.auth_target: Optional[str] = None
 
     def setup(self, **kwargs) -> None:
         """
@@ -143,18 +142,12 @@ class _WrapperConnection():
         except urllib3.exceptions.NameResolutionError as e:
             raise ConnectionError(str(e))
 
-    def _update_auth(self, response: _NSResponse = None) -> None:
-        x_pin_header: Optional[int] = _Secret(response.get_header("X-Pin")) if response else None
+    def _update_auth(self, response: Optional[_NSResponse] = None) -> None:
+        x_pin_header: Optional[_Secret] = _Secret(response.get_header("X-Pin")) if response else None
         
-        # Updates self.auth X-Pin if necessary (for quick sucessive requests):
-        #if self.auth:
-        #    if x_pin_header:
-        #        if self.auth.xpin != x_pin_header:
-        #            self.auth.xpin = _Secret(x_pin_header)
-        #    self.headers.update(self.auth.get())
-        
-        self.authManager.update_auth(self.auth_target, xpin=x_pin_header)
-        self.headers.update(self.authManager.get(self.auth_target).get())
+        if self.auth_target:
+            self.authManager.update_auth(self.auth_target, xpin=x_pin_header)
+            self.headers.update(self.authManager.get(self.auth_target).get())
 
     def _process_response(self, response: _NSResponse) -> None:     
         self._update_auth(response)
@@ -162,7 +155,3 @@ class _WrapperConnection():
 
 if __name__ == "__main__":
     wrapper = _WrapperConnection()
-    wrapper.set_authentication("orlys", _NationAuth(_Secret("12345")))
-    wrapper.set_authentication("dives_patriae", _NationAuth(_Secret("6994")))
-    wrapper.set_authentication("ponytus", _NationAuth(_Secret("my_momiscringy")))
-    pp(wrapper.authentications["orlys"])
