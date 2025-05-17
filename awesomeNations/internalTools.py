@@ -1,7 +1,7 @@
 from awesomeNations.customMethods import format_key, string_is_number, join_keys, gen_params
 from awesomeNations.exceptions import DataError
 from pprint import pprint as pp
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Iterable, Iterator
 import xmltodict
 import logging
 from pathlib import Path
@@ -11,6 +11,64 @@ from bs4 import BeautifulSoup
 import re
 
 logger = logging.getLogger("AwesomeLogger")
+
+class _ItemSequence(Iterator):
+    """
+    _ItemSequence is an iterator class that wraps a sequence of items,
+    allowing iteration over them one by one.
+    
+    **Note**: If an iterator or generator is passed, it will be consumed
+    and stored as a list internally.
+
+    ***
+
+    Parameters:
+        items (Any): The items to be wrapped. Can be a single item,
+                    a list, tuple, iterator, or any iterable.
+    """
+    def __init__(self, items: Any) -> None:
+        if not isinstance(items, (list, tuple, Iterator)):
+            self._items: list[Any] = [items]
+        else:
+            self._items: list[Any] = [item for item in items]
+        
+        self._current_index: int = -1
+    
+    def __iter__(self) -> Iterator:
+        return self
+    
+    def __next__(self) -> Any:
+        self._current_index += 1
+        if not self._current_index >= (len(self._items)):
+            return self._items[self._current_index]
+        raise StopIteration
+    
+    def __len__(self):
+        return len(self._items)
+    
+    def __getitem__(self, index: int) -> Any:
+        if not index <= len(self._items):
+            raise IndexError(f"Index {index} is out of range. Valid range for this {type(self).__name__} instance is 0 to {len(self._items) - 1}.")
+        return self._items[index]
+
+    def __str__(self):
+        return f"{type(self).__name__}(*{len(self._items)} items*...)"
+
+    def __repr__(self):
+        return f"{type(self).__name__}(items={self._items})"
+
+    def get_items(self) -> Any:
+        return self._items
+
+    def join_items(self,
+                   separator: str):
+        """
+        Joins all items in a single string.
+        """
+        return separator.join([str(item) for item in self._items])
+
+    def copy(self):
+        return _ItemSequence(self._items)
 
 class _Secret():
     """
@@ -57,52 +115,49 @@ class _Secret():
 
 class _ShardsQuery():
     def __init__(self,
-                 api_family: tuple[Literal["nation", "region", "world", "wa"], str | None],
-                 shards: Optional[str | tuple[str, ...] | list[str]] = None, 
+                 api_family: tuple[Literal["nation", "region", "world", "wa"], Optional[str]],
+                 shards: Optional[Iterable[str]] = None, 
                  params: Optional[dict[str, Any]] = None):
         if type(api_family) is not tuple:
             raise ValueError(f"api_family must be tuple, not '{type(api_family).__name__}'")
         
-        self.api_family = api_family
-        self.query_shards = shards
-        self.query_params = params
-        self._valid_shards = {
+        self._api_family: tuple[str, Optional[str]] = api_family
+        self._shards: Optional[_ItemSequence | str] = _ItemSequence(shards)
+        self._params: Optional[dict[str, Any]] = params
+        self._valid_shards: dict[str, list[str]] = {
             "nation": ['admirable', 'admirables', 'animal', 'animaltrait', 'answered', 'banner', 'banners', 'capital', 'category', 'census', 'crime', 'currency', 'customleader', 'customcapital', 'customreligion', 'dbid', 'deaths', 'demonym', 'demonym2', 'demonym2plural', 'dispatches', 'dispatchlist', 'endorsements', 'factbooks', 'factbooklist', 'firstlogin', 'flag', 'founded', 'foundedtime', 'freedom', 'fullname', 'gavote', 'gdp', 'govt', 'govtdesc', 'govtpriority', 'happenings', 'income', 'industrydesc', 'influence', 'influencenum', 'lastactivity', 'lastlogin', 'leader', 'legislation', 'majorindustry', 'motto', 'name', 'notable', 'notables', 'nstats', 'policies', 'poorest', 'population', 'publicsector', 'rcensus', 'region', 'religion', 'richest', 'scvote', 'sectors', 'sensibilities', 'tax', 'tgcanrecruit', 'tgcancampaign', 'type', 'wa', 'wabadges', 'wcensus', 'zombie', 'dossier', 'issues', 'issuesummary', 'nextissue', 'nextissuetime', 'notices', 'packs', 'ping', 'rdossier', 'unread'],
             "region": ['banlist', 'banner', 'bannerby', 'bannerurl', 'census', 'censusranks', 'dbid', 'delegate', 'delegateauth', 'delegatevotes', 'dispatches', 'embassies', 'embassyrmb', 'factbook', 'flag', 'founded', 'foundedtime', 'founder', 'frontier', 'gavote', 'governor', 'governortitle', 'happenings', 'history', 'lastupdate', 'lastmajorupdate', 'lastminorupdate', 'magnetism', 'messages', 'name', 'nations', 'numnations', 'wanations', 'numwanations', 'officers', 'poll', 'power', 'recruiters', 'scvote', 'tags', 'wabadges', 'zombie'],
             "world": ['banner', 'census', 'censusid', 'censusdesc', 'censusname', 'censusranks', 'censusscale', 'censustitle', 'dispatch', 'dispatchlist', 'faction', 'factions', 'featuredregion', 'happenings', 'lasteventid', 'nations', 'newnations', 'newnationdetails', 'numnations', 'numregions', 'poll', 'regions', 'regionsbytag', 'tgqueue'],
             "wa": ['numnations', 'numdelegates', 'delegates', 'members', 'happenings', 'proposals', 'resolution', 'voters', 'votetrack', 'dellog', 'delvotes', 'lastresolution']
         }
                 
-        self._validate_shards(self.query_shards) # Checks if shard(s) exists, if not, raises ValueError.
+        self._validate_shards(self._shards) # Checks if shard(s) exists, if not, raises ValueError.
 
-        if self.query_shards and not isinstance(self.query_shards, str):
-            self.query_shards = join_keys(self.query_shards)
-        if self.query_params:
-            self.query_params = gen_params(self.query_params, True)
+        self._query_shards: Optional[str] = None
+        self._query_params: Optional[str] = None
+        
+        if self._shards:
+            self._query_shards = self._shards.join_items("+")
+        if self._params:
+            self._query_params = gen_params(self._params, True) # type: ignore
 
     def querystring(self):
         querystring: str = "?"
-        querystring += f"{self.api_family[0]}={self.api_family[1]}&" if self.api_family[0] != "world" else ""
-        if self.query_shards:
-            querystring += f"q={self.query_shards}"
+        querystring += f"{self._api_family[0]}={self._api_family[1]}&" if self._api_family[0] != "world" else ""
+        if self._shards:
+            querystring += f"q={self._query_shards}"
         else:
             querystring = querystring.replace("&", "")
-        if self.query_params:
-            querystring += f";{self.query_params}"
+        if self._params:
+            querystring += f";{self._query_params}"
         return querystring
 
-    def _validate_shards(self, shards: Optional[str | tuple[str, ...] | list[str]]) -> None:
-        valid = self._valid_shards[self.api_family[0]]
-        if type(shards) == str:
-            if not shards in valid:
-                raise ValueError(f"Shard '{shards}' not found in {self.api_family[0].capitalize()} API family.")
-        elif type(shards) == list or type(shards) == tuple:
+    def _validate_shards(self, shards: Optional[_ItemSequence]) -> None:
+        valid = self._valid_shards[self._api_family[0]]
+        if shards:
             for shard in shards:
                 if not shard in valid:
-                    raise ValueError(f"Shard '{shard}' not found in {self.api_family[0].capitalize()} API family.")
-        else:
-            if shards:
-                raise ValueError(f"shards must be a str, list or tuple, not {type(shards).__name__}.")
+                    raise ValueError(f"Shard '{shard}' not found in {self._api_family[0].capitalize()} API family.")
                 
 class _DailyDataDumps():
     """
@@ -180,21 +235,22 @@ class _AuthManager():
         self.authentications: dict[str, _NationAuth] = {}
 
     def update_auth(self,
-                    id: str,
+                    id: Optional[str],
                     password: Optional[_Secret] = None,
                     autologin: Optional[_Secret] = None,
                     xpin: Optional[_Secret] = None):
-        if self.authentications.get(id):
-            if self.authentications[id].password != password and password:
-                self.authentications[id].password = password
-            if self.authentications[id].autologin != autologin and autologin:
-                self.authentications[id].autologin = autologin
-            if self.authentications[id].xpin != xpin and xpin:
-                self.authentications[id].xpin = xpin
-        else:
-            new_auth = _NationAuth(password, autologin)
-            new_auth.xpin = xpin
-            self.authentications.update({id: new_auth})
+        if id:
+            if self.authentications.get(id):
+                if self.authentications[id].password != password and password:
+                    self.authentications[id].password = password
+                if self.authentications[id].autologin != autologin and autologin:
+                    self.authentications[id].autologin = autologin
+                if self.authentications[id].xpin != xpin and xpin:
+                    self.authentications[id].xpin = xpin
+            else:
+                new_auth = _NationAuth(password, autologin)
+                new_auth.xpin = xpin
+                self.authentications.update({id: new_auth})
     
     def get_all(self):
         return self.authentications
@@ -207,9 +263,9 @@ class _AuthManager():
 
 class _PrivateCommand():
     def __init__(self,
-                 nation_name: str,
+                 nation_name: Optional[str],
                  command: str,
-                 params: dict[str, Any],
+                 params: dict[str, Any] | str,
                  allow_beta: bool = False):        
         self.valid = ["issue", "giftcard", "dispatch", "rmbpost"]
         self.not_prepare = ["issue"] # Commands that don't need preparing.
@@ -240,7 +296,7 @@ class _PrivateCommand():
     def _querystring(self):
         querystring: str = "?"
         querystring += f"nation={self.nation_name}&c={self.command_query}"
-        querystring += f"&{gen_params(self.command_params, True)}"
+        querystring += f"&{gen_params(self.command_params, join=True)}"
         return querystring
 
 class _AwesomeParser():

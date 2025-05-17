@@ -67,7 +67,7 @@ def get_index(object: tuple | list, index: int, default: Optional[Any] = None) -
     except IndexError:
         return default
 
-def gen_params(dict_data: Optional[dict[str, Any]] = None, join: bool = False, **kwargs: Any) -> Any:
+def gen_params(dict_data: Optional[dict[str, Any] | Any] = None, join: bool = False, **kwargs: Any) -> dict[str, Any] | str:
     query = dict_data if dict_data else kwargs
     query_params: dict[str, Any] = {key: str(join_keys(value, "+") if isinstance(value, list) else value).replace(" ", "%20") for key, value in query.items() if value != None}
     #for k, v in query_params.items():

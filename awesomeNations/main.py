@@ -1,22 +1,20 @@
-from awesomeNations.connection import _WrapperConnection
+from awesomeNations.connection import _WrapperConnection, _NationAPI, _RegionAPI
 from awesomeNations.customMethods import format_key, gen_params, generate_epoch_timestamp
-from awesomeNations.internalTools import _NationAuth, _ShardsQuery, _DailyDataDumps, _PrivateCommand, _Secret, _AwesomeParser
+from awesomeNations.internalTools import _DailyDataDumps, _Secret, _ShardsQuery
 from awesomeNations.exceptions import HTTPError
 from pprint import pprint as pp
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal, Any
 from urllib3 import Timeout
-from typing import Literal, Any, AnyStr
 from pathlib import Path
 from logging import WARNING, DEBUG
 import logging
 from bs4 import BeautifulSoup
 
+global_wrapper: Any = None
+
 logger = logging.getLogger("AwesomeLogger")
 logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(levelname)s: %(message)s")
-
-wrapper = _WrapperConnection()
-parser = _AwesomeParser()
 
 class AwesomeNations():
     """
@@ -83,6 +81,7 @@ class AwesomeNations():
                  api_version: int = 12,
                  log_level: Optional[int] = WARNING,
                  allow_beta: bool = False):
+        global global_wrapper # REMOVE IN THE NEXT MAJOR VERSION.
         self.user_agent = user_agent
         self.request_timeout: int | tuple[int, int] = request_timeout
         self.ratelimit_sleep: bool = ratelimit_sleep
@@ -96,8 +95,6 @@ class AwesomeNations():
         "Cache-Control": "no-cache",
         }
         
-        self.set_user_agent(self.user_agent)
-        
         if self.log_level is None:
             logger.disabled = True
         elif type(self.log_level) is int:
@@ -107,13 +104,19 @@ class AwesomeNations():
         
         if isinstance(self.request_timeout, tuple):
             self.request_timeout = Timeout(connect=(self.request_timeout[0]), read=self.request_timeout[1]) # type: ignore
-        wrapper.setup(
+        
+        self._wrapper_connection = _WrapperConnection()
+        self._wrapper_connection.setup(
             request_timeout = self.request_timeout,
             ratelimit_sleep = self.ratelimit_sleep,
             ratelimit_reset_time = self.ratelimit_reset_time,
             api_version = self.api_version,
             allow_beta = self.allow_beta
         )
+        
+        global_wrapper = self._wrapper_connection
+        
+        self.set_user_agent(self.user_agent)
 
     def __repr__(self):
         return f"AwesomeNations(user_agent='{self.user_agent}', request_timeout={self.request_timeout}, ratelimit_sleep={self.ratelimit_sleep}, ratelimit_reset_time={self.ratelimit_reset_time}, api_version={self.api_version}, log_level={self.log_level}, allow_beta={self.allow_beta})"
@@ -157,7 +160,7 @@ class AwesomeNations():
         if not shards:
             raise ValueError("No shards provided and World API doesn't have a standard API.")
         url = wrapper.base_url + _ShardsQuery(("world", None), shards, kwargs).querystring() # type: ignore
-        response: dict = wrapper.fetch_api_data(url)
+        response: dict = self._wrapper_connection.fetch_api_data(url)
         return response
 
     def get_world_assembly_shards(self,
@@ -170,14 +173,14 @@ class AwesomeNations():
             raise ValueError("No shards provided and World Assembly API doesn't have a standard API.")
         council_id = kwargs["council_id"]
         kwargs.pop("council_id")
-        url = wrapper.base_url + _ShardsQuery(("wa", council_id), shards, kwargs).querystring()
-        response: dict = wrapper.fetch_api_data(url)
+        url = self._wrapper_connection.base_url + _ShardsQuery(("wa", council_id), shards, kwargs).querystring()
+        response: dict = self._wrapper_connection.fetch_api_data(url)
         return response
 
     def get_api_latest_version(self) -> int:
         """Gets NationStates API latest version"""
         url = "https://www.nationstates.net/cgi-bin/api.cgi?a=version"
-        latest_version: int = int(wrapper.fetch_raw_data(url))
+        latest_version: int = int(self._wrapper_connection.fetch_raw_data(url))
         return latest_version
 
     def get_wrapper_status(self) -> dict[str, Any]:
@@ -186,7 +189,7 @@ class AwesomeNations():
         """
         status: dict[str, Any] = {
             "status": {
-                "ratelimit_requests_seen": getattr(wrapper, "ratelimit_requests_seen"),
+                "ratelimit_requests_seen": getattr(self._wrapper_connection, "ratelimit_requests_seen"),
             }
         }
         return status
@@ -202,19 +205,38 @@ class AwesomeNations():
             raise ValueError(f"'{user_agent}' is too short for a user_agent.")
         #setattr(self, "user_agent", user_agent)
         self._wrapper_headers.update({"User-Agent": user_agent})
-        wrapper.headers.update(self._wrapper_headers)
+        self._wrapper_connection.headers.update(self._wrapper_headers)
 
-    class Nation:
+    def nation(self,
+               nation_name: str,
+               password: Optional[str] = None,
+               autologin: Optional[str] = None) -> _NationAPI:
+        new_nation = _NationAPI(nation_name)
+        new_nation._set_wrapper(self._wrapper_connection)
+                
+        nation_password: Optional[_Secret] = _Secret(password) if password else None
+        nation_autologin: Optional[_Secret] = _Secret(password) if password else None
+
+        if any((nation_password, nation_autologin)):
+            new_nation.set_auth(nation_password.reveal() if nation_password else None,
+                                nation_autologin.reveal() if nation_autologin else None)
+        return new_nation
+
+    def region(self,
+               region_name: str) -> _RegionAPI:
+        new_region = _RegionAPI(region_name)
+        new_region._set_wrapper(self._wrapper_connection)
+
+        return new_region
+
+    class Nation(_NationAPI):
         """
-        Class dedicated to NationStates nation API.
+        **WARNING**: Deprecated, use AwesomeNations `nation()` instead.
         """
-        def __init__(self,
-                     nation_name: str,
-                     password: Optional[str] = None,
-                     autologin: Optional[str] = None) -> None:
-            self.nation_name: str = format_key(nation_name, False, '%20') # Name is automatically parsed.
-            self.password: Optional[_Secret] = None
-            self.autologin: Optional[_Secret] = None
+        def __init__(self, nation_name: str, password: str | None = None, autologin: str | None = None) -> None:
+            super().__init__(nation_name)
+            
+            self._set_wrapper(global_wrapper)
 
             if password:
                 if not isinstance(password, str):
@@ -225,357 +247,26 @@ class AwesomeNations():
                     raise ValueError(f"autologin must be type str, not {type(autologin).__name__}.")
                 self.autologin = _Secret(autologin)
 
-            auth_password: Optional[str] = self.password.reveal() if self.password and isinstance(self.password, _Secret) else None
-            auth_autologin: Optional[str] = self.autologin.reveal() if self.autologin and isinstance(self.autologin, _Secret) else None
-            if any((auth_password, auth_autologin)):
-                self.set_auth(auth_password, auth_autologin)
+            nation_password: Optional[_Secret] = self.password if self.password else None
+            nation_autologin: Optional[_Secret] = self.autologin if self.autologin else None
+            
+            if any((nation_password, nation_autologin)):
+                self.set_auth(nation_password.reveal() if nation_password else None,
+                            nation_autologin.reveal() if nation_autologin else None)
+            
+            logger.warning(f"{type(self).__name__} is deprecated, use AwesomeNations nation() instead.")
 
-        def __repr__(self):
-            return f"Nation(nation_name='{self.nation_name}', password={self.password}, autologin={self.autologin})"
-    
-        def __enter__(self, *args, **kwargs):
-            return self
-        
-        def __exit__(self, exc_type, exc_value, traceback):
-            #setattr(wrapper, "auth", None)
-            wrapper.authManager.forget(self.nation_name)
-            del self
-    
-        def __getattribute__(self, name):
-            setattr(wrapper, "auth_target", object.__getattribute__(self, "nation_name"))
-            return object.__getattribute__(self, name)
-    
-        def set_auth(self, password: Optional[str] = None, autologin: Optional[str] = None) -> None:
-            """
-            Sets Nation authentication.
-            """
-            if password:
-                self.password = _Secret(password)
-            if autologin:
-                self.autologin = _Secret(autologin)
-                #new_auth = _NationAuth(self.password, self.autologin)
-                #setattr(wrapper, 'auth', new_auth)
-            if not password and not autologin:
-                raise ValueError("At least a password or an autologin must be given.")
-            wrapper.authManager.update_auth(self.nation_name, self.password, self.autologin)
-    
-        def exists(self) -> bool:
-            """
-            Checks if nation exists.
-            """
-            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name)).querystring()
-            status_code: int = wrapper.connection_status_code(url)
-            match status_code:
-                case 200:
-                    return True
-                case 404:
-                    return False
-                case _:
-                    raise HTTPError(status_code)
-
-        # DEPRECATED METHOD
-        def get_public_shards(self,
-                              shards: Optional[str | tuple[str, ...] | list[str]] = None,
-                              **kwargs) -> dict[str, dict[str, Any]]:
-            """
-            # THIS METHOD IS DEPRECATED
-            ## Use ```get_shards()``` instead!
-            
-            ***
-            
-            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
-            
-            ### Standard:
-            
-            > A compendium of the most commonly sought information.
-            
-            ### Shards:
-            > If you don't need most of this data, please use shards instead. Shards allow you to request
-            > exactly what you want and can be used to request data not available from the Standard API!
-            """
-            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name), shards, kwargs).querystring()
-            logger.warning("get_public_shards() is deprecated, use get_shards() instead.")
-            response: dict = wrapper.fetch_api_data(url)
-            return response
-
-        # Replacing get_public_shards()
-        def get_shards(self,
-                       shards: Optional[str | tuple[str, ...] | list[str]] = None,
-                       **kwargs) -> dict[str, dict[str, Any]]:
-            """
-            Gets one or more shards from the requested nation, returns the standard API if no shards provided.
-            
-            ### Standard:
-            
-            > A compendium of the most commonly sought information.
-            
-            ### Shards:
-            > If you don't need most of this data, please use shards instead. Shards allow you to request
-            > exactly what you want and can be used to request data not available from the Standard API!
-            """
-            url = wrapper.base_url + _ShardsQuery(("nation", self.nation_name), shards, kwargs).querystring()
-            response: dict = wrapper.fetch_api_data(url)
-            return response
-
-        def is_authenticated(self) -> bool:
-            """
-            Checks if nation has a valid authentication.
-            """
-            try:
-                wrapper.authManager.get(self.nation_name)
-                self.get_shards("ping")
-                return True
-            except (KeyError, HTTPError):
-                return False
-
-        def execute_command(self,
-                            c: Literal["issue", "giftcard", "dispatch", "rmbpost"],
-                            **kwargs) -> dict[str, dict[str, Any]]:
-            """
-            Executes private commands.
-            """
-            if not isinstance(c, str):
-                raise ValueError(f"c must be type str, not {type(c).__name__}.")
-            command = _PrivateCommand(self.nation_name,
-                                      c,
-                                      kwargs,
-                                      wrapper.allow_beta)
-            token: str | None = None
-            if not c in command.not_prepare:
-                logger.info(f"Preparing private command: '{c}'...") 
-                prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("prepare"))
-                token: Optional[str] = prepare_response["nation"].get("success")
-                if not token:
-                    return prepare_response
-    
-            logger.info(f"Executing private command: '{c}'...")
-            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + command.command("execute", token))
-            return execute_response
-
-        def dispatch(self,
-                     action: Literal["add", "edit", "remove"],
-                     id: Optional[int] = None,
-                     title: Optional[str] = None,
-                     text: Optional[str] = None,
-                     category: Optional[int] = None,
-                     subcategory: Optional[int] = None) -> dict[str, dict[str, Any]]:
-            """
-            # BETA:
-            Currently in development. Subject to change without warning.
-            
-            ---
-            
-            Creates, edits and deletes dispatches.
-            
-            When adding or editing a dispatch, specify: `title`, `text`, `category` and `subcategory`.
-            When editing or removing a dispatch, you must also specify `id`.
-            """
-            if action != "add" and action != "edit" and action != "remove":
-                raise ValueError(f"action must be 'add', 'edit' or 'remove', not '{action}'.")
-            if not action == "add" and not id:
-                raise ValueError(f"action '{action}' needs a valid dispatch id!")
-            if (action == "add" or action == "edit") and not all((title, text, category, subcategory)):
-                raise ValueError(f"action '{action}' needs a valid title, text, category and subcategory.")
-
-            if id and not isinstance(id, int):
-                raise ValueError(f"id must be int, not type '{type(id).__name__}'.")
-            if title and not isinstance(title, str):
-                raise ValueError(f"title must be str, not type '{type(title).__name__}'.")
-            if text and not isinstance(text, str):
-                raise ValueError(f"text must be str, not type '{type(text).__name__}'.")
-            if category and not isinstance(category, int):
-                raise ValueError(f"category must be int, not type '{type(category).__name__}'.")
-            if subcategory and not isinstance(subcategory, int):
-                raise ValueError(f"subcategory must be int, not type '{type(subcategory).__name__}'.")
-            
-            query_params_raw: dict[str, Optional[str | list[str]]] = {
-                "dispatchid": str(id) if id is not None else None,
-                "dispatch": str(action) if action else None,
-                "title": title.replace(" ", "%20") if title else None,
-                "text": text.replace(" ", "%20") if text else None,
-                "category": str(category) if category is not None else None,
-                "subcategory": str(subcategory) if subcategory is not None else None
-            }
-            # Remove keys with None values
-            query_params: dict[str, str | list[str]] = {k: v for k, v in query_params_raw.items() if v is not None}
-            
-            c = _PrivateCommand(self.nation_name, "dispatch", query_params, wrapper.allow_beta)
-
-            prepare_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
-            token = prepare_response["nation"].get("success")
-            
-            if not token:
-                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
-                raise ValueError(reason)
-            
-            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
-            
-            error: Optional[str] = execute_response["nation"].get("error")
-            if error:
-                reason = parser.parse_html_in_string(error)
-                raise ValueError(reason)
-            
-            return execute_response
-
-        def rmb_post(self,
-                     region: str,
-                     text: str) -> dict[str, dict[str, Any]]:
-            """
-            # BETA:
-            Currently in development. Subject to change without warning.
-            
-            ---
-            
-            Post to a regional RMB.
-            """
-            if not isinstance(region, str):
-                raise ValueError(f"region must be type str, not {type(region).__name__}.")
-            if not isinstance(text, str):
-                raise ValueError(f"text must be type str, not {type(text).__name__}.")
-
-            query_params: dict[str, str] = gen_params(join=True,
-                                                      nation=self.nation_name,
-                                                      region=format_key(region, replace_empty="%20"),
-                                                      text=text.replace(" ", "%20") if text else text)
-            
-            c = _PrivateCommand(self.nation_name, "rmbpost", query_params, wrapper.allow_beta)
-
-            prepare_response: dict[str, dict[str, Any]] = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
-            token = prepare_response["nation"].get("success")
-            
-            if not token:
-                raise ValueError(parser.parse_html_in_string(prepare_response["nation"]["error"]))
-            
-            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
-            
-            error: Optional[str] = execute_response["nation"].get("error")
-            if error:
-                raise ValueError(parser.parse_html_in_string(error))
-            
-            return execute_response
-
-        def gift_card(self,
-                     id: int,
-                     season: int,
-                     to: str) -> dict[str, dict[str, Any]]:
-            """
-            # BETA:
-            Currently in development. Subject to change without warning.
-            
-            ---
-            
-            Gift a Trading Card to someone else.
-            """         
-            if not isinstance(id, int):
-                raise ValueError(f"id must be type int, not {type(id).__name__}.")
-            if not isinstance(season, int):
-                raise ValueError(f"season must be type int, not {type(season).__name__}.")
-            if not isinstance(to, str):
-                raise ValueError(f"to must be type str, not {type(to).__name__}.")
-            query_params = {
-                "cardid": id,
-                "season": season,
-                "to": format_key(to, replace_empty="_"),
-            }
-            
-            c = _PrivateCommand(self.nation_name, "giftcard", query_params, wrapper.allow_beta)
-
-            prepare_response: dict[str, dict[str, Any]] = wrapper.fetch_api_data(wrapper.base_url + c.command("prepare"))
-            token = prepare_response["nation"].get("success")
-            
-            if not token:
-                reason = parser.parse_html_in_string(prepare_response["nation"]["error"])
-                raise ValueError(reason)
-            
-            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute", token))
-            
-            error: Optional[str] = execute_response["nation"].get("error")
-            if error:
-                reason = parser.parse_html_in_string(error)
-                raise ValueError(reason)
-            
-            return execute_response
-
-        def answer_issue(self,
-                     id: int,
-                     option: int) -> dict[str, dict[str, Any]]:
-            """
-            Address an Issue.
-
-            To dismiss an issue, set `option` to -1 (Note that option id numbers
-            begin counting at zero).
-            """     
-            if not isinstance(id, int):
-                raise ValueError(f"id must be type int, not {type(id).__name__}.")
-            if not isinstance(option, int):
-                raise ValueError(f"option must be type int, not {type(option).__name__}.")
-                               
-            query_params: dict[str, str | list[str]] = {
-                "issue": str(id),
-                "option": str(option),
-            }
-            
-            c = _PrivateCommand(self.nation_name, "issue", query_params, wrapper.allow_beta)
-            
-            execute_response: dict = wrapper.fetch_api_data(wrapper.base_url + c.command("execute"))
-            
-            error: Optional[str] = execute_response["nation"].get("issue").get("error")
-            if error:
-                reason = parser.parse_html_in_string(error)
-                raise ValueError(reason)
-            
-            return execute_response
-
-    class Region: 
+    class Region(_RegionAPI):
         """
-        Class dedicated to NationStates region API.
+        **WARNING**: Deprecated, use AwesomeNations `region()` instead.
         """
         def __init__(self, region_name: str) -> None:
-            self.region_name = format_key(region_name, False, '%20')
-        
-        def __repr__(self):
-            return f"Region(region_name='{self.region_name}')"
-        
-        def __enter__(self, *args, **kwargs):
-            return self
-        
-        def __exit__(self, exc_type, exc_value, traceback):
-            del self
-        
-        def exists(self) -> bool:
-            """
-            Checks if region exists.
-            """
-            url = wrapper.base_url + _ShardsQuery(("region", self.region_name)).querystring()
-            status_code: int = wrapper.connection_status_code(url)
-            match status_code:
-                case 200:
-                    return True
-                case 404:
-                    return False
-                case _:
-                    raise HTTPError(status_code)
-
-        def get_shards(self, shards: Optional[str | tuple[str, ...] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
-            """
-            Gets one or more shards from the requested region, returns the standard API if no shards provided.
+            super().__init__(region_name)
             
-            ### Standard:
+            self._set_wrapper(global_wrapper)
             
-            > A compendium of the most commonly sought information.
-            
-            ### Shards:
-            > If you don't need most of this data, please use shards instead. Shards allow you to request
-            > exactly what you want and can be used to request data not available from the Standard API!
-            """
-            url = wrapper.base_url + _ShardsQuery(("region", self.region_name), shards, kwargs).querystring()
-            response: dict = wrapper.fetch_api_data(url)
-            return response
+            logger.warning(f"{type(self).__name__} is deprecated, use AwesomeNations region() instead.")
 
 if __name__ == "__main__":
     api = AwesomeNations("AwesomeNations/Test", log_level=DEBUG)
-    nation = api.Nation("Orlys")
-    region = api.Region("Fullworthia")
-    print(api)
-    print(nation)
-    print(region)
+    ...
