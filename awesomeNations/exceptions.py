@@ -1,3 +1,4 @@
+from awesomeNations.baseExceptions import NSConnectionError
 from typing import Optional
 
 
@@ -20,7 +21,7 @@ def status_code_context(status_code: int) -> Optional[str]:
     return output
 
 
-class HTTPError(Exception):
+class HTTPError(NSConnectionError):
     """
     Exception raised when request status code is not `200` (Failed).
     """
@@ -35,13 +36,13 @@ class HTTPError(Exception):
         super().__init__(f'{msg}. Hope This Totally Pleases-you!')
 
 
-class ConnectionError(Exception):
+class NSConnectionUnreachable(NSConnectionError):
     def __init__(self, reason: str) -> None:
         msg = f"An error occuried while estabishing connection: '{reason}'"
         super().__init__(f"{msg}.\nMaybe it's a problem with your internet?")
 
 
-class DataError(Exception):
+class DataError(UnicodeError):
     """
     Exception to warn about data processing failures, such
     encoding or decoding errors.
@@ -52,4 +53,7 @@ class DataError(Exception):
 
 
 if __name__ == "__main__":
-    raise ConnectionError("500")
+    try:
+        raise DataError('XML', 'XML is cringe, json is cooler!')
+    except UnicodeError as e:
+        print(e)

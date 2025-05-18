@@ -99,5 +99,28 @@ def gen_params(dict_data: Optional[dict[str, Any] | Any] = None, join: bool = Fa
     return query_params
 
 
+def search_for_error_key(dictionary: dict[str, Any]) -> Optional[Any]:
+    """
+    Recursively searches a dictionary for the first key containing 'error'
+    and returns its corresponding value.
+    """
+    for key, value in dictionary.items():
+        if 'error' in key:
+            return value
+        elif isinstance(value, dict):
+            result = search_for_error_key(value)
+            if result is not None:
+                return result
+    return None
+
 if __name__ == "__main__":
-    print(is_convertible_to("123.7", [int, float, complex]))
+    test_data = {'nation': {
+        'id': 'applebot',
+        'stuff': {
+            'error': 'cuz you suck at python.'
+        },
+        'error': 'Please select a valid category.<br><br>Please select a valid subcategory.</p>\n<h4>Your text was not saved! You may wish to copy it now:</h4><pre class="divindent">Abah dabah duuuuuu.</pre>'
+        }
+                 }
+    
+    print(search_for_error_key(test_data))

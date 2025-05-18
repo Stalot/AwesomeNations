@@ -1,5 +1,5 @@
-from awesomeNations.customMethods import format_key, gen_params
-from awesomeNations.exceptions import HTTPError, ConnectionError
+from awesomeNations.customMethods import format_key, gen_params, search_for_error_key
+from awesomeNations.exceptions import HTTPError, NSConnectionUnreachable
 from awesomeNations.internalTools import _AwesomeParser, _ShardsQuery
 from awesomeNations.internalTools import _Secret, _AuthManager
 from awesomeNations.internalTools import _PrivateCommand
@@ -150,7 +150,7 @@ class _WrapperConnection():
                 raise HTTPError(ns_response.status)
             return ns_response
         except urllib3.exceptions.NameResolutionError as e:
-            raise ConnectionError(str(e))
+            raise NSConnectionUnreachable(str(e))
 
     def _update_auth(self, response: Optional[_NSResponse] = None) -> None:
         x_pin_header: Optional[_Secret] = _Secret(response.get_header("X-Pin")) if response else None
@@ -168,7 +168,7 @@ class _APIBlock():
     def __init__(self) -> None:
         self.name: Optional[str] = None
         self._wrapper: _WrapperConnection
-        self._parser: _AwesomeParser
+        self._parser: _AwesomeParser = _AwesomeParser()
         
         if self.name and not isinstance(self.name, str):
             raise ValueError(f"name must be type str, not '{type(self.name).__name__}'.")
@@ -426,7 +426,7 @@ class _NationAPI(_APIBlock):
         token: Optional[str] = None
         if not c in command.not_prepare:
             logger.info(f"Preparing private command: '{c}'...") 
-            prepare_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("prepare"))
+            prepare_response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("prepare"))
             token: Optional[str] = prepare_response["nation"].get("success")
             if not token:
                 return prepare_response

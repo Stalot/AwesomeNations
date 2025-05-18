@@ -240,13 +240,14 @@ class _AuthManager():
                     autologin: Optional[_Secret] = None,
                     xpin: Optional[_Secret] = None):
         if id:
-            if self.authentications.get(id):
-                if self.authentications[id].password != password and password:
-                    self.authentications[id].password = password
-                if self.authentications[id].autologin != autologin and autologin:
-                    self.authentications[id].autologin = autologin
-                if self.authentications[id].xpin != xpin and xpin:
-                    self.authentications[id].xpin = xpin
+            previous_auth = self.authentications.get(id)
+            if previous_auth:
+                if previous_auth.password != password and password:
+                    previous_auth.password = password
+                if previous_auth.autologin != autologin and autologin:
+                   previous_auth.autologin = autologin
+                if previous_auth.xpin != xpin and xpin:
+                    previous_auth.xpin = xpin
             else:
                 new_auth = _NationAuth(password, autologin)
                 new_auth.xpin = xpin
