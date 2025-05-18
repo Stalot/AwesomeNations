@@ -173,10 +173,13 @@ class _APIBlock():
         if self.name and not isinstance(self.name, str):
             raise ValueError(f"name must be type str, not '{type(self.name).__name__}'.")
     
-    def _request_shards(self, shards: Optional[Iterable[str]], parammeters: Optional[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    def _request_shards(self,
+                        family: Literal['nation', 'region', 'world', 'wa'],
+                        shards: Optional[Iterable[str]],
+                        parammeters: Optional[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         if self._wrapper:
             self._set_auth_target(self.name)
-            url = self._wrapper.base_url + _ShardsQuery(("nation", self.name), shards, parammeters).querystring()
+            url = self._wrapper.base_url + _ShardsQuery((family, self.name), shards, parammeters).querystring()
             response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(url)
             return response
         raise ValueError("_wrapper must be set first.")
@@ -262,8 +265,8 @@ class _NationAPI(_APIBlock):
 
     # Replacing get_public_shards()
     def get_shards(self,
-                    shards: Optional[str | tuple[str, ...] | list[str]] = None,
-                    **kwargs) -> dict[str, dict[str, Any]]:
+                    shards: Optional[Iterable[str]] = None,
+                    **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the requested nation, returns the standard API if no shards provided.
         
@@ -275,7 +278,7 @@ class _NationAPI(_APIBlock):
         > If you don't need most of this data, please use shards instead. Shards allow you to request
         > exactly what you want and can be used to request data not available from the Standard API!
         """
-        return self._request_shards(shards, kwargs)
+        return self._request_shards('nation', shards, kwargs)
 
     def is_authenticated(self) -> bool:
         """
@@ -435,6 +438,7 @@ class _NationAPI(_APIBlock):
         execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("execute", token))
         return execute_response
 
+
 class _RegionAPI(_APIBlock): 
     """
     Class dedicated to NationStates region API.
@@ -465,7 +469,9 @@ class _RegionAPI(_APIBlock):
             case _:
                 raise HTTPError(status_code)
 
-    def get_shards(self, shards: Optional[str | tuple[str, ...] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
+    def get_shards(self,
+                   shards: Optional[Iterable[str]] = None,
+                   **kwargs) -> dict[str, dict[str, Any]]:
         """
         Gets one or more shards from the requested region, returns the
         standard API if no shards provided.
@@ -480,7 +486,65 @@ class _RegionAPI(_APIBlock):
         > exactly what you want and can be used to request 
         : data not available from the Standard API!
         """
-        return self._request_shards(shards, kwargs)
+        return self._request_shards('region', shards, kwargs)
+
+
+class _WorldAPI(_APIBlock): 
+    """
+    Class dedicated to NationStates world API.
+    """
+    def __init__(self) -> None:
+        self.name = None
+    
+    def __repr__(self):
+        return f"{type(self).__name__}()"
+    
+    def __enter__(self, *args, **kwargs):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self
+    
+    def get_shards(self,
+                   shards: Iterable[str],
+                   **kwargs: Any) -> dict[str, dict[str, Any]]:
+        """
+        Gets one or more shards from the World API.
+        """
+        return self._request_shards('world', shards, kwargs)
+
+
+class _WorldAssemblyAPI(_APIBlock): 
+    """
+    Class dedicated to NationStates world assembly API.
+    """
+    def __init__(self, council_id: int) -> None:
+        if not isinstance(council_id, int):
+            raise ValueError(f"council_id must be type int, not {type(council_id).__name__}")
+        
+        if council_id < 1 or council_id > 2:
+            context = "council_id is 1 for the General Assembly and 2 for the Security Council"
+            raise ValueError(f"council_id '{council_id}' is not valid. {context}.")
+        
+        self.name = str(council_id)
+    
+    def __repr__(self):
+        return f"{type(self).__name__}()"
+    
+    def __enter__(self, *args, **kwargs):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self
+    
+    def get_shards(self,
+                   shards: Iterable[str],
+                   **kwargs: Any) -> dict[str, dict[str, Any]]:
+        """
+        Gets one or more shards from the World API.
+        """
+        return self._request_shards('wa', shards, kwargs)
+
 
 
 if __name__ == "__main__":

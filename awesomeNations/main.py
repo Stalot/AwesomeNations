@@ -1,4 +1,4 @@
-from awesomeNations.connection import _WrapperConnection, _NationAPI, _RegionAPI
+from awesomeNations.connection import _WrapperConnection, _NationAPI, _RegionAPI, _WorldAPI, _WorldAssemblyAPI
 from awesomeNations.internalTools import _DailyDataDumps, _Secret, _ShardsQuery
 from datetime import datetime
 from typing import Optional, Literal, Any
@@ -234,6 +234,19 @@ class AwesomeNations():
         new_region._set_wrapper(self._wrapper_connection)
 
         return new_region
+
+    def world(self) -> _WorldAPI:
+        world = _WorldAPI()
+        world._set_wrapper(self._wrapper_connection)
+
+        return world
+
+    def world_assembly(self,
+                       council_id: int) -> _WorldAssemblyAPI:
+        wa = _WorldAssemblyAPI(council_id)
+        wa._set_wrapper(self._wrapper_connection)
+
+        return wa
 
     # DEPRECATED CLASS
     class Nation(_NationAPI):
