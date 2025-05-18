@@ -175,7 +175,7 @@ class _APIBlock():
     
     def _request_shards(self, shards: Optional[Iterable[str]], parammeters: Optional[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         if self._wrapper:
-            self.set_auth_target(self.name)
+            self._set_auth_target(self.name)
             url = self._wrapper.base_url + _ShardsQuery(("nation", self.name), shards, parammeters).querystring()
             response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(url)
             return response
@@ -184,7 +184,7 @@ class _APIBlock():
     def _set_wrapper(self, instance: _WrapperConnection):
         self._wrapper = instance
     
-    def set_auth_target(self, target: Optional[str]) -> None:
+    def _set_auth_target(self, target: Optional[str]) -> None:
         setattr(self._wrapper, 'auth_target', target)
 
 
@@ -288,30 +288,6 @@ class _NationAPI(_APIBlock):
         except (KeyError, HTTPError):
             return False
 
-    def execute_command(self,
-                        c: Literal["issue", "giftcard", "dispatch", "rmbpost"],
-                        **kwargs) -> dict[str, dict[str, Any]]:
-        """
-        Executes private commands.
-        """
-        if not isinstance(c, str):
-            raise ValueError(f"c must be type str, not {type(c).__name__}.")
-        command = _PrivateCommand(self.name,
-                                    c,
-                                    kwargs,
-                                    self._wrapper.allow_beta)
-        token: str | None = None
-        if not c in command.not_prepare:
-            logger.info(f"Preparing private command: '{c}'...") 
-            prepare_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("prepare"))
-            token: Optional[str] = prepare_response["nation"].get("success")
-            if not token:
-                return prepare_response
-
-        logger.info(f"Executing private command: '{c}'...")
-        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("execute", token))
-        return execute_response
-
     def dispatch(self,
                  action: Literal["add", "edit", "remove"],
                  id: Optional[int] = None,
@@ -360,23 +336,7 @@ class _NationAPI(_APIBlock):
         # Remove keys with None values
         query_params: dict[str, str | list[str]] = {k: v for k, v in query_params_raw.items() if v is not None}
         
-        c = _PrivateCommand(self.name, "dispatch", query_params, self._wrapper.allow_beta)
-
-        prepare_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("prepare"))
-        token = prepare_response["nation"].get("success")
-        
-        if not token:
-            reason = self._parser.parse_html_in_string(prepare_response["nation"]["error"])
-            raise ValueError(reason)
-        
-        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("execute", token))
-        
-        error: Optional[str] = execute_response["nation"].get("error")
-        if error:
-            reason = self._parser.parse_html_in_string(error)
-            raise ValueError(reason)
-        
-        return execute_response
+        return self._execute_command('dispatch', query_params)
 
     def rmb_post(self,
                     region: str,
@@ -394,26 +354,13 @@ class _NationAPI(_APIBlock):
         if not isinstance(text, str):
             raise ValueError(f"text must be type str, not {type(text).__name__}.")
 
-        query_params: dict[str, Any] | str = gen_params(join=True,
-                                                    nation=self.name,
-                                                    region=format_key(region, replace_empty="%20"),
-                                                    text=text.replace(" ", "%20") if text else text)
+        query_params: dict[str, Any] = {
+            'nation': self.name,
+            'region': format_key(region, replace_empty="%20"),
+            'text': text.replace(" ", "%20") if text else text
+        }
         
-        c = _PrivateCommand(self.name, "rmbpost", query_params, self._wrapper.allow_beta)
-
-        prepare_response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("prepare"))
-        token = prepare_response["nation"].get("success")
-        
-        if not token:
-            raise ValueError(self._parser.parse_html_in_string(prepare_response["nation"]["error"]))
-        
-        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("execute", token))
-        
-        error: Optional[str] = execute_response["nation"].get("error")
-        if error:
-            raise ValueError(self._parser.parse_html_in_string(error))
-        
-        return execute_response
+        return self._execute_command('rmbpost', query_params)
 
     def gift_card(self,
                     id: int,
@@ -433,32 +380,13 @@ class _NationAPI(_APIBlock):
             raise ValueError(f"season must be type int, not {type(season).__name__}.")
         if not isinstance(to, str):
             raise ValueError(f"to must be type str, not {type(to).__name__}.")
-        query_params = {
+
+        query_params: dict[str, Any] = {
             "cardid": id,
             "season": season,
             "to": format_key(to, replace_empty="_"),
         }
-        
-        c = _PrivateCommand(self.name,
-                            "giftcard",
-                            query_params,
-                            self._wrapper.allow_beta)
-
-        prepare_response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("prepare"))
-        token = prepare_response["nation"].get("success")
-        
-        if not token:
-            reason = self._parser.parse_html_in_string(prepare_response["nation"]["error"])
-            raise ValueError(reason)
-        
-        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("execute", token))
-        
-        error: Optional[str] = execute_response["nation"].get("error")
-        if error:
-            reason = self._parser.parse_html_in_string(error)
-            raise ValueError(reason)
-        
-        return execute_response
+        return self._execute_command('giftcard', query_params)
 
     def answer_issue(self,
                     id: int,
@@ -474,22 +402,38 @@ class _NationAPI(_APIBlock):
         if not isinstance(option, int):
             raise ValueError(f"option must be type int, not {type(option).__name__}.")
                             
-        query_params: dict[str, str | list[str]] = {
+        query_params: dict[str, Any] = {
             "issue": str(id),
             "option": str(option),
         }
-        
-        c = _PrivateCommand(self.name, "issue", query_params, self._wrapper.allow_beta)
-        
-        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("execute"))
-        
-        error: Optional[str] = execute_response["nation"].get("issue").get("error")
-        if error:
-            reason = self._parser.parse_html_in_string(error)
-            raise ValueError(reason)
-        
-        return execute_response
+        return self._execute_command('issue', query_params)
 
+    def _execute_command(self,
+                        c: Literal["issue", "giftcard", "dispatch", "rmbpost"],
+                        parameters: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        """
+        Executes private commands.
+        """
+        if not isinstance(c, str):
+            raise ValueError(f"c must be type str, not {type(c).__name__}.")
+        
+        self._set_auth_target(self.name)
+        
+        command = _PrivateCommand(self.name,
+                                    c,
+                                    parameters,
+                                    self._wrapper.allow_beta)
+        token: Optional[str] = None
+        if not c in command.not_prepare:
+            logger.info(f"Preparing private command: '{c}'...") 
+            prepare_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("prepare"))
+            token: Optional[str] = prepare_response["nation"].get("success")
+            if not token:
+                return prepare_response
+
+        logger.info(f"Executing private command: '{c}'...")
+        execute_response: dict = self._wrapper.fetch_api_data(self._wrapper.base_url + command.command("execute", token))
+        return execute_response
 
 class _RegionAPI(_APIBlock): 
     """

@@ -147,10 +147,15 @@ class AwesomeNations():
         dumps = _DailyDataDumps()
         return dumps.dowload(dumps.get_dump(type), filepath)
 
+    # DEPRECATED METHOD
     def get_world_shards(self,
                          shards: str | tuple[str, ...] | list[str],
                          **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
+        **WARNING**: This method is deprecated.
+        
+        ***
+
         Gets one or more shards from the World API.
         """
         if not shards:
@@ -159,10 +164,15 @@ class AwesomeNations():
         response: dict = self._wrapper_connection.fetch_api_data(url)
         return response
 
+    # DEPRECATED METHOD
     def get_world_assembly_shards(self,
                                   shards: str | tuple[str, ...] | list[str],
                                   **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
+        **WARNING**: This method is deprecated.
+        
+        ***
+        
         Gets one or more shards from the World Assembly API.
         """
         if not shards:
@@ -225,6 +235,7 @@ class AwesomeNations():
 
         return new_region
 
+    # DEPRECATED CLASS
     class Nation(_NationAPI):
         """
         **WARNING**: Deprecated, use AwesomeNations `nation()` instead.
@@ -252,6 +263,7 @@ class AwesomeNations():
             
             logger.warning(f"{type(self).__name__} is deprecated, use AwesomeNations nation() instead.")
 
+    # DEPRECATED CLASS
     class Region(_RegionAPI):
         """
         **WARNING**: Deprecated, use AwesomeNations `region()` instead.
