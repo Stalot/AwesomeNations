@@ -1,16 +1,16 @@
-from awesomeNations.customMethods import join_keys, string_is_number, format_key, gen_params
-from awesomeNations.exceptions import HTTPError, DataError, ConnectionError
-from awesomeNations.internalTools import _AwesomeParser, _ShardsQuery, _PrivateCommand
-from awesomeNations.internalTools import _NationAuth, _Secret, _AuthManager, _ItemSequence
+from awesomeNations.customMethods import format_key, gen_params
+from awesomeNations.exceptions import HTTPError, ConnectionError
+from awesomeNations.internalTools import _AwesomeParser, _ShardsQuery
+from awesomeNations.internalTools import _Secret, _AuthManager
+from awesomeNations.internalTools import _PrivateCommand
 from typing import Optional, Literal, Any, Iterable
-from urllib3 import BaseHTTPResponse, HTTPResponse, HTTPHeaderDict
-from pprint import pprint as pp
-from pathlib import Path
+from urllib3 import BaseHTTPResponse, HTTPHeaderDict
 import urllib3
 import logging
 import time
 
 logger = logging.getLogger("AwesomeLogger")
+
 
 class _NSResponse():
     def __init__(self, response: BaseHTTPResponse):
@@ -20,32 +20,37 @@ class _NSResponse():
         self.headers: HTTPHeaderDict = self._response.headers
         self.encoding = "UTF-8"
         self._parser = _AwesomeParser()
-        
+
         content_encoding: Optional[str] = self.headers.get("Content-Type")
-        if content_encoding:
-            try:
-                self.encoding = content_encoding.split(" ")[1].replace("charset=", "")
-            except:
-                pass
-    
+
+        try:
+            if content_encoding:
+                self.encoding = content_encoding.split(" ")[1]
+                self.encoding = self.encoding.replace("charset=", "")
+        except Exception:
+            self.encoding = "UTF-8"
+
     def __repr__(self):
         return f"_NSResponse(response: HTTPResponse = {self._response})"
-    
+
     def get_content(self) -> dict[str, Any]:
         """
         Gets response content and automatically parses it.
         """
         parsed_data: dict = self._parser.parse_xml(self.content, self.encoding)
         return parsed_data
-    
+
     def get_raw_content(self) -> str:
         """
         Gets response content without parsing it.
         """
         return self.content.decode(self.encoding).strip()
-    
-    def get_header(self, name: str, default = None) -> Optional[Any]:
+
+    def get_header(self,
+                   name: str,
+                   default=None) -> Optional[Any]:
         return self.headers.get(name, default)
+
 
 class _WrapperConnection():
     def __init__(self):
@@ -58,10 +63,10 @@ class _WrapperConnection():
         self.api_version: int = 12
         self.allow_beta: bool = False
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
-        
+
         self._pool_manager = urllib3.PoolManager(8,
-                                                self.headers,
-                                                retries=False)
+                                                 self.headers,
+                                                 retries=False)
         self.authManager = _AuthManager()
         self.auth_target: Optional[str] = None
 
@@ -73,16 +78,18 @@ class _WrapperConnection():
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                raise AttributeError(f"_WrapperConnection has no attribute '{key}'. Did you mean one of these: {", ".join(self.__dict__.keys())}?")
+                attrs: str = ", ".join(self.__dict__.keys())
+                msg: str = f"{type(self).__name__} has no attribute '{key}'"
+                raise AttributeError(f"{msg}. Did you mean {attrs}?")
 
     def fetch_api_data(self,
-                       url: str = 'https://www.nationstates.net/',
-                       query_parameters: Optional[dict] = None) -> dict[str, dict[str, str | int | float]]:
+                       url: str = 'https://www.nationstates.net/') -> dict[str, dict[str, str | int | float]]:
         """
-        This fetches API data and automatically parses it: (xml response -> python dictionary)
+        This fetches API data and automatically
+        parses it: (xml response -> python dictionary)
         """
         url = url.format(v=self.api_version)
-        
+
         # Updates headers X-Password, X-Autologin and X-Pin in the next request
         # for actions that need authentication (Like private shards).
         self._update_auth()
@@ -94,31 +101,34 @@ class _WrapperConnection():
 
     def fetch_raw_data(self,
                        url: str) -> str:
-        
+
         response: _NSResponse = self._make_request(url=url)
         self._process_response(response)
-        
+
         return response.get_raw_content()
 
-    def connection_status_code(self, url: str = 'https://www.nationstates.net/') -> int:
+    def connection_status_code(self,
+                               url: str = 'https://www.nationstates.net/') -> int:
         url = url.format(v=self.api_version)
-        
+
         self._update_auth()
 
-        response: _NSResponse = self._make_request(url=url, raise_exception=False)
+        response: _NSResponse = self._make_request(url=url,
+                                                   raise_exception=False)
         self._process_response(response)
 
         return response.status
-   
+
     def _check_api_ratelimit(self) -> None:
         """
-        Checks the NationStates API ratelimit and hibernates if the request limit was reached.
+        Checks the NationStates API ratelimit and
+        hibernates if the request limit was reached.
         """
-        if self.ratelimit_sleep:
-            if self.ratelimit_remaining != None and self.ratelimit_remaining < 1:
-                    logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
-                    time.sleep(self.ratelimit_reset_time + 1)
-                    logger.info("Ratelimit hibernation finished.")
+        if self.ratelimit_sleep and self.ratelimit_remaining is not None:
+            if self.ratelimit_remaining < 1:
+                logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
+                time.sleep(self.ratelimit_reset_time + 1)
+                logger.info("Ratelimit hibernation finished.")
 
     def _update_ratelimit_status(self, response: _NSResponse) -> None:
         self.ratelimit_remaining = int(str(response.get_header("Ratelimit-remaining", 50)))
@@ -153,6 +163,7 @@ class _WrapperConnection():
         self._update_auth(response)
         self._update_ratelimit_status(response)
 
+
 class _APIBlock():
     def __init__(self) -> None:
         self.name: Optional[str] = None
@@ -175,6 +186,7 @@ class _APIBlock():
     
     def set_auth_target(self, target: Optional[str]) -> None:
         setattr(self._wrapper, 'auth_target', target)
+
 
 class _NationAPI(_APIBlock):
     """
@@ -301,12 +313,13 @@ class _NationAPI(_APIBlock):
         return execute_response
 
     def dispatch(self,
-                    action: Literal["add", "edit", "remove"],
-                    id: Optional[int] = None,
-                    title: Optional[str] = None,
-                    text: Optional[str] = None,
-                    category: Optional[int] = None,
-                    subcategory: Optional[int] = None) -> dict[str, dict[str, Any]]:
+                 action: Literal["add", "edit", "remove"],
+                 id: Optional[int] = None,
+                 title: Optional[str] = None,
+                 text: Optional[str] = None,
+                 category: Optional[int] = None,
+                 subcategory: Optional[int] = None
+                 ) -> dict[str, dict[str, Any]]:
         """
         # BETA:
         Currently in development. Subject to change without warning.
@@ -413,7 +426,7 @@ class _NationAPI(_APIBlock):
         ---
         
         Gift a Trading Card to someone else.
-        """         
+        """
         if not isinstance(id, int):
             raise ValueError(f"id must be type int, not {type(id).__name__}.")
         if not isinstance(season, int):
@@ -426,7 +439,10 @@ class _NationAPI(_APIBlock):
             "to": format_key(to, replace_empty="_"),
         }
         
-        c = _PrivateCommand(self.name, "giftcard", query_params, self._wrapper.allow_beta)
+        c = _PrivateCommand(self.name,
+                            "giftcard",
+                            query_params,
+                            self._wrapper.allow_beta)
 
         prepare_response: dict[str, dict[str, Any]] = self._wrapper.fetch_api_data(self._wrapper.base_url + c.command("prepare"))
         token = prepare_response["nation"].get("success")
@@ -474,6 +490,7 @@ class _NationAPI(_APIBlock):
         
         return execute_response
 
+
 class _RegionAPI(_APIBlock): 
     """
     Class dedicated to NationStates region API.
@@ -506,17 +523,21 @@ class _RegionAPI(_APIBlock):
 
     def get_shards(self, shards: Optional[str | tuple[str, ...] | list[str]] = None, **kwargs) -> dict[str, dict[str, Any]]:
         """
-        Gets one or more shards from the requested region, returns the standard API if no shards provided.
+        Gets one or more shards from the requested region, returns the
+        standard API if no shards provided.
         
         ### Standard:
         
         > A compendium of the most commonly sought information.
         
         ### Shards:
-        > If you don't need most of this data, please use shards instead. Shards allow you to request
-        > exactly what you want and can be used to request data not available from the Standard API!
+        > If you don't need most of this data, please use
+        > shards instead. Shards allow you to request
+        > exactly what you want and can be used to request 
+        : data not available from the Standard API!
         """
         return self._request_shards(shards, kwargs)
+
 
 if __name__ == "__main__":
     wrapper = _WrapperConnection()

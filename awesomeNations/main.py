@@ -1,15 +1,11 @@
 from awesomeNations.connection import _WrapperConnection, _NationAPI, _RegionAPI
-from awesomeNations.customMethods import format_key, gen_params, generate_epoch_timestamp
 from awesomeNations.internalTools import _DailyDataDumps, _Secret, _ShardsQuery
-from awesomeNations.exceptions import HTTPError
-from pprint import pprint as pp
 from datetime import datetime
 from typing import Optional, Literal, Any
 from urllib3 import Timeout
 from pathlib import Path
 from logging import WARNING, DEBUG
 import logging
-from bs4 import BeautifulSoup
 
 global_wrapper: Any = None
 
@@ -252,7 +248,7 @@ class AwesomeNations():
             
             if any((nation_password, nation_autologin)):
                 self.set_auth(nation_password.reveal() if nation_password else None,
-                            nation_autologin.reveal() if nation_autologin else None)
+                              nation_autologin.reveal() if nation_autologin else None)
             
             logger.warning(f"{type(self).__name__} is deprecated, use AwesomeNations nation() instead.")
 
