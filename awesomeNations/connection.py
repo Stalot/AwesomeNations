@@ -238,6 +238,39 @@ class _NationAPI(_APIBlock):
             case _:
                 raise HTTPError(status_code)
 
+    def verify_checksum(self,
+                        code: str,
+                        token: Optional[str] = None) -> bool:
+        """
+        # Verification API
+
+        To get a single-use checksum, ask the user to visit:
+        https://www.nationstates.net/page=verify_login  
+        and enter the code displayed into your website.
+
+        ---
+
+        This can be used by a third-party website to verify that a user owns
+        a particular nation, without requiring the user to divulge sensitive
+        information.
+
+        The code will expire if:
+        - the nation logs out,
+        - it performs a significant in-game action (e.g., moving regions or endorsing),
+        - or after it is successfully verified.
+
+        The code only allows nation ownership verification by a third-party website.
+        It **does not provide access to or control over the nation**.
+        """
+
+        if not isinstance(code, str):
+            raise ValueError(f"code must be type str, not {type(code).__name__}.")
+        
+        url: str = self._wrapper.base_url + f'?a=verify&nation={self.name}&checksum={code}'
+        if token:
+            url += f"&token={token}"
+        return bool(int(self._wrapper.fetch_raw_data(url)))
+
     # DEPRECATED METHOD
     def get_public_shards(self,
                             shards: Optional[str | tuple[str, ...] | list[str]] = None,
