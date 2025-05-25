@@ -32,54 +32,47 @@ class AwesomeNations():
     
     ---
     
-    ### user_agent:
+    **user_agent**:
+        Sets a User-Agent. Whenever possible, your tool should identify itself by setting
+        the User-Agent header with **relevant** data.
 
-    > Sets a User-Agent. Whenever possible, your tool should identify itself by setting
-    > the User-Agent header with **relevant** data.
+        - `<application name>/<version> <comments>`
+        - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
+    
+    **request_timeout**:
+        Defines a timeout (in seconds) for requests.
 
-    > - `<application name>/<version> <comments>`
-    > - `ExampleScript/1.2 (by:Testlandia; usedBy:Maxtopia)`
+        - `request_timeout: tuple = (10, 5)` -> 10 seconds for connecting, 5 seconds for reading.
+        - `request_timeout: int = 10` -> 10 seconds for both.
     
-    ### request_timeout:
+    **ratelimit_sleep**:
+        This allows to automatically "sleep" if the API ratelimit is reached, prevents temporary
+        lockouts due to excessive requests in a short span of time.
 
-    > Defines a timeout (in seconds) for requests.
+    **ratelimit_reset_time**:
+        Defines the reset time (in seconds) to wait when the API ratelimit is reached.
+    
+    **api_version**:
+        This setting allows you to specify the NationStates API version your script uses.
 
-    > - `request_timeout: tuple = (10, 5)` -> 10 seconds for connecting, 5 seconds for reading.
-    > - `request_timeout: int = 10` -> 10 seconds for both.
-    
-    ### ratelimit_sleep:
-    
-    > This allows to automatically "sleep" if the API ratelimit is reached, prevents temporary
-    > lockouts due to excessive requests in a short span of time.
+    **log_level**:
+        Sets logging log level, if None is given, disables logging.
 
-    ### ratelimit_reset_time:
-    
-    > Defines the reset time (in seconds) to wait when the API ratelimit is reached.
-    
-    ### api_version:
-    
-    > This setting allows you to specify the NationStates API version your script uses.
-
-    ### log_level:
-    
-    > Sets logging log level, if None is given, disables logging.
-
-    ### allow_beta:
-    
-    > Defines if AwesomeNations should allow beta resources to be used by you or not.
+    **allow_beta**:
+        Defines if AwesomeNations should allow beta resources to be used by you or not.
     """
 
     def __init__(self,
                  user_agent: str,
-                 request_timeout: int | tuple = (15, 10),
+                 request_timeout: int | tuple[int, int] = (15, 10),
                  ratelimit_sleep: bool = True,
                  ratelimit_reset_time: int = 30,
                  api_version: int = 12,
                  log_level: Optional[int] = WARNING,
                  allow_beta: bool = False):
-        global global_wrapper # REMOVE IN THE NEXT MAJOR VERSION.
+        global global_wrapper # REMOVE IN NEXT MAJOR VERSION.
         self.user_agent = user_agent
-        self.request_timeout: int | tuple[int, int] = request_timeout
+        self.request_timeout: int | tuple[int, int] | Timeout = request_timeout
         self.ratelimit_sleep: bool = ratelimit_sleep
         self.ratelimit_reset_time: int = ratelimit_reset_time
         self.api_version: int = api_version
@@ -99,7 +92,7 @@ class AwesomeNations():
             raise ValueError(f"Invalid {type(self.log_level).__name__} '{self.log_level}', log_level must be an int (to change level) or None (to disable logging)")
         
         if isinstance(self.request_timeout, tuple):
-            self.request_timeout = Timeout(connect=(self.request_timeout[0]), read=self.request_timeout[1]) # type: ignore
+            self.request_timeout = Timeout(connect=(self.request_timeout[0]), read=self.request_timeout[1])
         
         self._wrapper_connection = _WrapperConnection()
         self._wrapper_connection.setup(
@@ -193,11 +186,15 @@ class AwesomeNations():
         """
         Gets wrapper data, such the number of requests seen.
         """
-        status: dict[str, Any] = {
+        limit_manager = self._wrapper_connection.rateLimitManager
+        
+        status: dict[str, dict[str, Any]] = {
             "status": {
-                "ratelimit_requests_seen": getattr(self._wrapper_connection, "ratelimit_requests_seen"),
+                'user_agent': self.user_agent,
+                'api_version': self.api_version,
             }
         }
+        status["status"].update(limit_manager.get_info())
         return status
 
     def set_user_agent(self, user_agent: str) -> None:

@@ -17,7 +17,7 @@ def is_convertible_to(value: Any,
         try:
             conversion(value)
             result.append(True)
-        except Exception:
+        except ValueError:
             result.append(False)
     return result
 

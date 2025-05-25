@@ -9,8 +9,52 @@ import urllib3
 import json
 from bs4 import BeautifulSoup
 import re
+import time
 
 logger = logging.getLogger("AwesomeLogger")
+
+class _RateLimitManager():
+    def __init__(self) -> None:
+        self.requests_seen: int = 0
+    
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(rate_limit_policy={self.rate_limit_policy})"
+    
+    def set_rate_limit_policy(self,
+                              max_requests_limit: int,
+                              time_break: int):
+        self.rate_limit_policy: tuple[int, int] = (max_requests_limit, time_break)
+        self.rate_limit_break: int = self.rate_limit_policy[1]
+        if not hasattr(self, 'requests_remaining'):
+            self.requests_remaining: int = self.rate_limit_policy[0]
+
+    def get_info(self) -> dict[str, Any]:
+        return {
+            'requests_seen': self.requests_seen,
+            'rate_limit_policy': self.rate_limit_policy
+        }
+    
+    def update_rate_limit_status(self,
+                                 requests_remaining: Optional[str] = None,
+                                 requests_seen: Optional[str] = None):
+        if requests_remaining:
+            self.requests_remaining = int(requests_remaining)
+        if requests_seen:
+            self.requests_seen = int(requests_seen)   
+        self._check_ratelimits()
+
+    def _check_ratelimits(self):
+        if self.requests_remaining <= 1:
+            self.coffee_break(self.rate_limit_break)
+
+    def coffee_break(self,
+                    seconds: int):
+        """
+        Pauses code activity for x seconds (`seconds`).
+        """
+        logger.warning(f"API rate limit reached, your code will be paused for: {self.rate_limit_break} seconds.")
+        time.sleep(seconds)
+        self.requests_remaining = self.rate_limit_policy[0]
 
 class _ItemSequence(Iterator):
     """
@@ -341,14 +385,4 @@ class _AwesomeParser():
             return key, value
 
 if __name__ == "__main__":
-    authManager = _AuthManager()
-    
-    authManager.update_auth("orlys", password=_Secret("12345"), xpin=_Secret("343535323"))
-    authManager.update_auth("orlys", password=_Secret("1234523423"), xpin=None)
-    authManager.update_auth("dives_patriae", password=_Secret("12345"), xpin=_Secret("343535324"))
-    authManager.update_auth("fullworthia", password=_Secret("12345"), xpin=_Secret("343535325"))
-    authManager.update_auth("ponytus", password=_Secret("12345"), xpin=_Secret("343535326"))
-    
-    authManager.forget("ponytus")
-    
-    pp(authManager.get_all())
+    "Minus one..."
