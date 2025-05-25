@@ -95,14 +95,13 @@ class AwesomeNations():
             self.request_timeout = Timeout(connect=(self.request_timeout[0]), read=self.request_timeout[1])
         
         self._wrapper_connection = _WrapperConnection()
-        self._wrapper_connection.setup(
+        self._wrapper_connection.configure(
             request_timeout = self.request_timeout,
             ratelimit_sleep = self.ratelimit_sleep,
             ratelimit_reset_time = self.ratelimit_reset_time,
             api_version = self.api_version,
             allow_beta = self.allow_beta
         )
-        
         global_wrapper = self._wrapper_connection
         
         self.set_user_agent(self.user_agent)

@@ -1,6 +1,5 @@
 from awesomeNations.customMethods import format_key, string_is_number, gen_params
 from awesomeNations.exceptions import DataError
-from pprint import pprint as pp
 from typing import Optional, Literal, Any, Iterable, Iterator
 import xmltodict
 import logging
@@ -14,8 +13,10 @@ import time
 logger = logging.getLogger("AwesomeLogger")
 
 class _RateLimitManager():
-    def __init__(self) -> None:
+    def __init__(self,
+                 sleep: bool) -> None:
         self.requests_seen: int = 0
+        self._sleep: bool = sleep
     
     def __repr__(self) -> str:
         return f"{type(self).__name__}(rate_limit_policy={self.rate_limit_policy})"
@@ -45,7 +46,8 @@ class _RateLimitManager():
 
     def _check_ratelimits(self):
         if self.requests_remaining <= 1:
-            self.coffee_break(self.rate_limit_break)
+            if self._sleep == True:
+                self.coffee_break(self.rate_limit_break)
 
     def coffee_break(self,
                     seconds: int):

@@ -1,4 +1,4 @@
-from awesomeNations.customMethods import format_key, gen_params, search_for_error_key
+from awesomeNations.customMethods import format_key
 from awesomeNations.exceptions import HTTPError, NSConnectionUnreachable
 from awesomeNations.internalTools import _AwesomeParser, _ShardsQuery, _RateLimitManager
 from awesomeNations.internalTools import _Secret, _AuthManager
@@ -7,7 +7,6 @@ from typing import Optional, Literal, Any, Iterable
 from urllib3 import BaseHTTPResponse, HTTPHeaderDict, Timeout
 import urllib3
 import logging
-import time
 
 logger = logging.getLogger("AwesomeLogger")
 
@@ -57,8 +56,6 @@ class _WrapperConnection():
         self.headers: dict[str, str] = {}
         self.request_timeout: int | tuple[int, int] | Timeout = (10, 10)
         self.ratelimit_sleep: bool = True
-        #self.ratelimit_remaining: int = 50
-        #self.ratelimit_requests_seen: int = 0
         self.api_version: int = 12
         self.allow_beta: bool = False
         self.base_url = "https://www.nationstates.net/cgi-bin/api.cgi"
@@ -68,22 +65,22 @@ class _WrapperConnection():
                                                  retries=False)
         self.authManager = _AuthManager()
         self.auth_target: Optional[str] = None
-        self.rateLimitManager = _RateLimitManager()
 
-    def setup(self,
+    def configure(self,
               request_timeout:  int | tuple[int, int] | Timeout,
               ratelimit_sleep: bool,
               ratelimit_reset_time: int,
               api_version: int,
               allow_beta: bool) -> None:
         """
-        Configures _WrapperConnection attributes from the given kwargs.
+        Configures _WrapperConnection attributes.
         """
 
         self.request_timeout = request_timeout
         self.ratelimit_sleep = ratelimit_sleep
         self.api_version = api_version
         self.allow_beta = allow_beta
+        self.rateLimitManager = _RateLimitManager(sleep=self.ratelimit_sleep)
         self.rateLimitManager.set_rate_limit_policy(50, ratelimit_reset_time)
 
     def fetch_api_data(self,
@@ -122,17 +119,6 @@ class _WrapperConnection():
         self._process_response(response)
 
         return response.status
-
-    #def _check_api_ratelimit(self) -> None:
-    #    """
-    #    Checks the NationStates API ratelimit and
-    #    hibernates if the request limit was reached.
-    #    """
-    #    if self.ratelimit_sleep and self.ratelimit_remaining is not None:
-    #        if self.ratelimit_remaining < 1:
-    #            logger.warning(f"API ratelimit reached, your code will be paused for: {self.ratelimit_reset_time} seconds.")
-    #            time.sleep(self.ratelimit_reset_time + 1)
-    #            logger.info("Ratelimit hibernation finished.")
 
     def _update_ratelimit_status(self, response: _NSResponse) -> None:
         #self.ratelimit_remaining = int(str(response.get_header("Ratelimit-remaining", 50)))
